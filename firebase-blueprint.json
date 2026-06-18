@@ -1,0 +1,56 @@
+{
+  "entities": {
+    "parcel": {
+      "title": "Parcel",
+      "description": "An agricultural field boundary with telemetry metrics and yields",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "cropType": { "type": "string" },
+        "area": { "type": "number" },
+        "soilMoisture": { "type": "number" },
+        "predictedYield": { "type": "number" },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "boundaries": {
+          "type": "array",
+          "description": "Array of lat-lng coordinates defining the field outer ring"
+        },
+        "createdAt": { "type": "string" },
+        "userId": { "type": "string" },
+        "ndvi": { "type": "number" },
+        "cropHeight": { "type": "number" },
+        "soilType": { "type": "string" }
+      },
+      "required": ["id", "name", "cropType", "area", "lat", "lng", "userId"]
+    },
+    "crop": {
+      "title": "Crop",
+      "description": "Durable agronomic catalog entry populated dynamically from an API source",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "icon": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "soilPHRange": { "type": "string" },
+        "waterRequirement": { "type": "string" },
+        "growthDuration": { "type": "string" },
+        "sourcedAt": { "type": "string" }
+      },
+      "required": ["id", "name", "icon"]
+    }
+  },
+  "firestore": {
+    "/parcels/{parcelId}": {
+      "schema": "parcel",
+      "description": "User-defined field boundaries with telemetry overlays"
+    },
+    "/crops/{cropId}": {
+      "schema": "crop",
+      "description": "Dynamically-populated catalog of agricultural and horticultural crop types"
+    }
+  }
+}

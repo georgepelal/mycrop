@@ -5,7 +5,10 @@ import {
   signInAnonymously,
   GoogleAuthProvider,
   signInWithPopup,
-  signOut
+  signOut,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile
 } from "firebase/auth";
 import { auth, isMockFirebase } from "../lib/firebase";
 
@@ -13,6 +16,8 @@ interface AuthContextType {
   user: FirebaseUser | null;
   loading: boolean;
   login: () => Promise<void>;
+  loginWithEmail: (email: string, pass: string) => Promise<void>;
+  signUpWithEmail: (email: string, pass: string, name?: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   isMock: boolean;
@@ -20,7 +25,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock profile for smooth pre-rendered sandbox experience
+// Fallback profile only if mock firebase config is used
 const mockUser = {
   uid: "mock-agronomist-george",
   email: "georgepelal@gmail.com",
@@ -38,12 +43,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (isMockFirebase) {
-      // Offline fallback: load cached session or provide default active agronomist context
       const cached = localStorage.getItem("mycrop_session_user");
       if (cached === "active") {
         setUser(mockUser);
       } else {
-        setUser(mockUser); // Default logged in for instant, beautiful sandbox view
+        setUser(mockUser); // Default logged in for sandbox
       }
       setLoading(false);
       return;
@@ -63,11 +67,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(mockUser);
       return;
     }
-    // Attempt anonymous sign in or popup standard sign in
     try {
       await signInAnonymously(auth);
     } catch (e) {
       console.error("Auth login fail", e);
+    }
+  };
+
+  const loginWithEmail = async (email: string, pass: string) => {
+    if (isMockFirebase) {
+      localStorage.setItem("mycrop_session_user", "active");
+      setUser(mockUser);
+      return;
+    }
+    await signInWithEmailAndPassword(auth, email, pass);
+  };
+
+  const signUpWithEmail = async (email: string, pass: string, name?: string) => {
+    if (isMockFirebase) {
+      localStorage.setItem("mycrop_session_user", "active");
+      setUser(mockUser);
+      return;
+    }
+    const credential = await createUserWithEmailAndPassword(auth, email, pass);
+    if (name && credential.user) {
+      await updateProfile(credential.user, {
+        displayName: name,
+        photoURL: "🌱"
+      });
+      // Force refreshing the user state
+      setUser({ ...credential.user, displayName: name, photoURL: "🌱" });
     }
   };
 
@@ -79,7 +108,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     try {
       const provider = new GoogleAuthProvider();
-      // Add custom scopes if needed (optional)
       await signInWithPopup(auth, provider);
     } catch (e) {
       console.error("Google login fail", e);
@@ -97,7 +125,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, logout, isMock: isMockFirebase }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithEmail, signUpWithEmail, loginWithGoogle, logout, isMock: isMockFirebase }}>
       {children}
     </AuthContext.Provider>
   );

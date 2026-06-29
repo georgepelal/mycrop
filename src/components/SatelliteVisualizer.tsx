@@ -43,6 +43,57 @@ export default function SatelliteVisualizer({
   const [hoveredPixel, setHoveredPixel] = useState<{ x: number; y: number; lat: number; lng: number; value: number } | null>(null);
   const [clickedPixel, setClickedPixel] = useState<{ x: number; y: number; lat: number; lng: number; ndvi: number; moisture: number } | null>(null);
 
+  // Live real-world satellite tracking via ISS database API
+  const [issData, setIssData] = useState<{
+    latitude: number;
+    longitude: number;
+    altitudeKm: number;
+    velocityKmh: number;
+    distanceToGrowerKm: number;
+    isNearOverhead: boolean;
+    visibility: string;
+  } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    let timer: any = null;
+
+    let lat = 42.0308;
+    let lng = -93.6319;
+    if (boundary && boundary.length > 0) {
+      const sumLat = boundary.reduce((acc, curr) => acc + curr.lat, 0);
+      const sumLng = boundary.reduce((acc, curr) => acc + curr.lng, 0);
+      lat = sumLat / boundary.length;
+      lng = sumLng / boundary.length;
+    }
+
+    const fetchIssOverhead = async () => {
+      try {
+        const res = await fetch("/api/iss-current-overhead", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lat, lng })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (active && data.iss) {
+            setIssData(data.iss);
+          }
+        }
+      } catch (err) {
+        console.warn("Could not query live satellite telemetry tracker:", err);
+      }
+    };
+
+    fetchIssOverhead();
+    timer = setInterval(fetchIssOverhead, 15000); // refresh every 15s
+
+    return () => {
+      active = false;
+      if (timer) clearInterval(timer);
+    };
+  }, [boundary]);
+
   // Redraw the canvas when mode or inputs change
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -475,6 +526,26 @@ export default function SatelliteVisualizer({
           </div>
         </div>
       </div>
+
+      {issData && (
+        <div className="mt-6 pt-4 border-t border-gray-150 flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono text-[11px] text-gray-500 animate-fade-in bg-slate-50/50 -mx-6 -mb-6 p-4 border-b rounded-b-3xl">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping shrink-0" />
+            <span className="font-bold text-gray-700">📡 Live ISS Orbit Footprint:</span>
+            <span className={`px-1.5 py-0.5 rounded text-[9px] font-sans font-extrabold uppercase ${
+              issData.isNearOverhead ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-500"
+            }`}>
+              {issData.isNearOverhead ? "Awaiting Imaging Pass" : "Out of Horizon"}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 md:flex flex-wrap items-center gap-x-4 gap-y-1">
+            <span>Altitude: <strong className="text-slate-800">{issData.altitudeKm} km</strong></span>
+            <span>Speed: <strong className="text-slate-800">{issData.velocityKmh} km/h</strong></span>
+            <span>Range: <strong className="text-slate-800">{issData.distanceToGrowerKm} km</strong></span>
+            <span>Target: <strong className="text-slate-800">{issData.latitude.toFixed(1)}°N, {Math.abs(issData.longitude).toFixed(1)}°W</strong></span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

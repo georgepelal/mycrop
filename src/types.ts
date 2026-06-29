@@ -136,3 +136,15 @@ export interface Crop {
   sourcedAt?: string;
 }
 
+export interface DiagnosticLog {
+  id: string;
+  parcelId: string;
+  timestamp: string;
+  category: string; // e.g. "Space Weather", "Sentinel Reflectance", "Planetary Boundary Layer", "Hydrology"
+  apiSource: string; // e.g. "Copernicus Sentinel-2", "NOAA Space Weather", "USGS Watersheds"
+  metricsJSONString: string; // Stringified parameters
+  summary: string; // human readable text
+  status: string; // e.g. "warning", "optimal", "critical", "info"
+}
+
+

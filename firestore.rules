@@ -24,6 +24,14 @@ service cloud.firestore {
                     && request.resource.data.name.size() <= 100;
 
       allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+
+      // Diagnostics Subcollection under Parcel
+      match /diagnostics/{diagnosticId} {
+        allow read, list, delete: if request.auth != null && get(/databases/$(database)/documents/parcels/$(parcelId)).data.userId == request.auth.uid;
+        allow create, update: if request.auth != null 
+                              && get(/databases/$(database)/documents/parcels/$(parcelId)).data.userId == request.auth.uid
+                              && request.resource.data.parcelId == parcelId;
+      }
     }
 
     // Secure Crops Collection

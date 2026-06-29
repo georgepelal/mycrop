@@ -8,7 +8,7 @@ export default function CompanyLogo() {
         <Sprout className="w-5 h-5 text-white animate-pulse" />
       </div>
       <div className="flex flex-col text-left">
-        <span className="font-display font-black tracking-tight text-gray-950 text-base leading-none">
+        <span className="font-display font-black tracking-tight text-gray-950 dark:text-slate-100 text-base leading-none">
           MyCrop
         </span>
         <span className="text-[10px] font-mono font-bold text-gray-400 leading-none tracking-widest uppercase mt-0.5">

@@ -1,11 +1,14 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
-import { Mail, Lock, ShieldAlert, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Mail, Lock, ShieldAlert, ArrowRight, Eye, EyeOff, Loader2, User } from "lucide-react";
 import CompanyLogo from "../components/CompanyLogo";
 
 export default function AuthPage() {
-  const { login, loginWithGoogle, isMock } = useAuth();
+  const { loginWithEmail, signUpWithEmail, loginWithGoogle, isMock } = useAuth();
+  const { t } = useTranslation();
   const [isSignUp, setIsSignUp] = useState(false);
+  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -16,16 +19,18 @@ export default function AuthPage() {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg("");
-    // Simulate short network delay then authenticate session!
-    setTimeout(async () => {
-      try {
-        await login();
-      } catch (err: any) {
-        setErrorMsg(err?.message || "Login failed");
-      } finally {
-        setIsLoading(false);
+    try {
+      if (isSignUp) {
+        await signUpWithEmail(email, password, displayName || undefined);
+      } else {
+        await loginWithEmail(email, password);
       }
-    }, 1000);
+    } catch (err: any) {
+      console.error("Auth error", err);
+      setErrorMsg(err?.message || "Authentication failed. Please verify your credentials.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleSignIn = async () => {
@@ -43,17 +48,17 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-[500px] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" id="auth-page-container">
-      <div className="max-w-md w-full space-y-8 bg-white border border-gray-150 p-8 sm:p-10 rounded-3xl shadow-xl">
+      <div className="max-w-md w-full space-y-8 bg-white border border-gray-150 p-8 sm:p-10 rounded-3xl shadow-xl text-left">
         
         {/* Logo and header */}
         <div className="flex flex-col items-center text-center space-y-4">
           <CompanyLogo />
           <div className="space-y-1">
             <h2 className="text-2xl font-display font-black tracking-tight text-gray-950">
-              {isSignUp ? "Register Telemetry Station" : "Agent Authorization"}
+              {isSignUp ? t("auth.registerTitle") : t("auth.loginTitle")}
             </h2>
             <p className="text-xs text-gray-500 max-w-xs leading-relaxed">
-              Verify credentials to establish a secure link with your crop yield nodes and Sentinel orbits.
+              {t("auth.desc")}
             </p>
           </div>
         </div>
@@ -81,6 +86,26 @@ export default function AuthPage() {
         <form className="space-y-5" onSubmit={handleSubmit}>
           
           <div className="space-y-4">
+            {/* Name input (only for registration) */}
+            {isSignUp && (
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">
+                  Agronomist Display Name
+                </label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
+                  <input
+                    type="text"
+                    required
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="George Pelal"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-xs text-slate-800 font-semibold focus:outline-none focus:border-brand-green"
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Email input */}
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">

@@ -108,7 +108,8 @@ I keep all spectral Sentinel indices (NDVI: **${activeParcel.ndviValue}**, NDWI:
       });
 
       if (!response.ok) {
-        throw new Error("Chat feedback error from agronomist node");
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Chat feedback error from agronomist node");
       }
 
       const data = await response.json();

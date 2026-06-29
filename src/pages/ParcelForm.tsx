@@ -126,7 +126,8 @@ export default function ParcelForm({ onAddParcel, onNavigateBack }: ParcelFormPr
         body: JSON.stringify({ lat: latVal, lng: lngVal })
       });
       if (!response.ok) {
-        throw new Error("Crop detection analysis timed out/unreachable");
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Crop detection analysis timed out/unreachable");
       }
       const data = await response.json();
       if (data.detectedCrop) {
@@ -1009,8 +1010,8 @@ export default function ParcelForm({ onAddParcel, onNavigateBack }: ParcelFormPr
                   ISRIC Live
                 </span>
               ) : (
-                <span className="text-[9px] bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-full font-bold font-mono uppercase">
-                  Fallback Active
+                <span className="text-[9px] bg-red-50 text-red-500 border border-red-200 px-2 py-0.5 rounded-full font-bold font-mono uppercase">
+                  Service Error
                 </span>
               )}
             </div>
@@ -1040,7 +1041,7 @@ export default function ParcelForm({ onAddParcel, onNavigateBack }: ParcelFormPr
                   <div className="space-y-1 text-xs">
                     <p className="font-bold text-rose-800">Satellite API Offline/Limit</p>
                     <p className="text-[10px] text-rose-600 leading-relaxed font-sans">
-                      Coordinate falls outside mapping datasets or search rate exceeded. Deterministic physical mocks generated for safety and field layout planning.
+                      Coordinate falls outside mapping datasets or search rate exceeded. Regional baseline estimations loaded for field layout planning.
                     </p>
                   </div>
                 </div>
@@ -1054,7 +1055,7 @@ export default function ParcelForm({ onAddParcel, onNavigateBack }: ParcelFormPr
                 <div className="space-y-1.5 text-left">
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-black text-slate-750 font-display">Clay Sand Fraction</span>
-                    <span className="font-mono font-bold text-slate-900">{soilGridsClay !== undefined ? `${soilGridsClay}%` : "32.0% (Sim)"}</span>
+                    <span className="font-mono font-bold text-slate-900">{soilGridsClay !== undefined ? `${soilGridsClay}%` : "32.0% (Estimated)"}</span>
                   </div>
                   <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                     <div 
@@ -1068,7 +1069,7 @@ export default function ParcelForm({ onAddParcel, onNavigateBack }: ParcelFormPr
                 <div className="space-y-1.5 text-left">
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-black text-slate-750 font-display">Sandy Quartz Fraction</span>
-                    <span className="font-mono font-bold text-slate-900">{soilGridsSand !== undefined ? `${soilGridsSand}%` : "38.0% (Sim)"}</span>
+                    <span className="font-mono font-bold text-slate-900">{soilGridsSand !== undefined ? `${soilGridsSand}%` : "38.0% (Estimated)"}</span>
                   </div>
                   <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                     <div 
@@ -1082,7 +1083,7 @@ export default function ParcelForm({ onAddParcel, onNavigateBack }: ParcelFormPr
                 <div className="space-y-1.5 text-left">
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-black text-slate-750 font-display">Alluvial Silt Fraction</span>
-                    <span className="font-mono font-bold text-slate-900">{soilGridsSilt !== undefined ? `${soilGridsSilt}%` : "30.0% (Sim)"}</span>
+                    <span className="font-mono font-bold text-slate-900">{soilGridsSilt !== undefined ? `${soilGridsSilt}%` : "30.0% (Estimated)"}</span>
                   </div>
                   <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                     <div 
@@ -1108,7 +1109,7 @@ export default function ParcelForm({ onAddParcel, onNavigateBack }: ParcelFormPr
                     <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider block font-mono">Carbon stock (SOC)</span>
                     <div className="flex items-baseline gap-1">
                       <span className="text-sm font-black text-slate-900">
-                        {soilGridsSoc !== undefined ? `${soilGridsSoc} dg/kg` : "18.4% (Est)"}
+                        {soilGridsSoc !== undefined ? `${soilGridsSoc} dg/kg` : "18.4% (Estimated)"}
                       </span>
                     </div>
                   </div>

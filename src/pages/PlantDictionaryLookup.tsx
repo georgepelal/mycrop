@@ -1,0 +1,99 @@
+import React, { useState, useEffect } from "react";
+import { Search, AlertCircle, MapPin as MapPinIcon, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { useAuth } from "../contexts/AuthContext";
+
+export default function PlantDictionaryLookup() {
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [coords, setCoords] = useState({ lat: 40.7128, lng: -74.006 }); // Default New York
+
+  useEffect(() => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCoords({ lat: position.coords.latitude, lng: position.coords.longitude });
+        },
+        (err) => {
+          console.warn("Geolocation denied or failed, using defaults");
+        }
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      setError(null);
+      try {
+        let response;
+        if ("/api/plant-dictionary-lookup".includes("health") || "/api/plant-dictionary-lookup".includes("ip-geolocation")) {
+          response = await fetch("/api/plant-dictionary-lookup");
+        } else {
+          response = await fetch("/api/plant-dictionary-lookup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ cropName: "Wheat" }),
+          });
+        }
+        
+        if (!response.ok) {
+          throw new Error("Failed to load data");
+        }
+        const result = await response.json();
+        if (result.error) {
+          throw new Error(result.error);
+        }
+        setData(result);
+      } catch (err: any) {
+        setError(err.message || "An unexpected error occurred");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [coords]);
+
+  return (
+    <div className="w-full max-w-7xl mx-auto space-y-6">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-12 h-12 rounded-2xl bg-brand-green/10 flex items-center justify-center">
+          <Search className="w-6 h-6 text-brand-green" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight">{t("sidebar.PlantDictionaryLookup") || "Plant Dictionary Lookup"}</h1>
+          <p className="text-sm font-medium text-slate-500">Live API Endpoint: /api/plant-dictionary-lookup</p>
+        </div>
+      </div>
+
+      
+        
+
+      {loading ? (
+        <div className="flex flex-col items-center justify-center p-12 bg-white rounded-3xl shadow-sm border border-slate-100">
+          <Loader2 className="w-8 h-8 text-brand-green animate-spin mb-4" />
+          <p className="text-sm font-bold text-slate-500">Fetching API Analysis...</p>
+        </div>
+      ) : error ? (
+        <div className="bg-rose-50 rounded-3xl p-6 border border-rose-100 flex items-start gap-4">
+          <AlertCircle className="w-6 h-6 text-rose-500 shrink-0" />
+          <div>
+            <h3 className="text-sm font-bold text-rose-800">Observation Failed</h3>
+            <p className="text-sm font-medium text-rose-600 mt-1">{error}</p>
+            <p className="text-xs text-rose-400 mt-2">The API may be rate-limited, unavailable, or unsupported for the current coordinates.</p>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-slate-900 rounded-3xl p-6 shadow-xl border border-slate-800 overflow-x-auto">
+          <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">Raw API Response Target</h3>
+          <pre className="text-emerald-400 font-mono text-xs leading-relaxed whitespace-pre-wrap word-break">
+            {JSON.stringify(data, null, 2)}
+          </pre>
+        </div>
+      )}
+    </div>
+  );
+}

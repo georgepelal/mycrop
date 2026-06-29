@@ -9,7 +9,7 @@ import {
   where 
 } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "./firebase";
-import { Parcel, UserSubscription, Crop } from "../types";
+import { Parcel, UserSubscription, Crop, DiagnosticLog } from "../types";
 
 // Collection path helper
 const PATH_PARCELS = "parcels";
@@ -221,5 +221,62 @@ export async function saveCropsCatalog(crops: Crop[]): Promise<void> {
     handleFirestoreError(error, OperationType.WRITE, PATH_CROPS);
   }
 }
+
+/**
+ * Fetches historic diagnostic calculations/logs for a specific parcel.
+ */
+export async function getDiagnosticsForParcel(parcelId: string): Promise<DiagnosticLog[]> {
+  try {
+    const collRef = collection(db, PATH_PARCELS, parcelId, "diagnostics");
+    const snap = await getDocs(collRef);
+    const results: DiagnosticLog[] = [];
+    snap.forEach((d) => {
+      results.push({
+        id: d.id,
+        ...d.data()
+      } as DiagnosticLog);
+    });
+    // Sort by timestamp descending
+    return results.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, `${PATH_PARCELS}/${parcelId}/diagnostics`);
+    return [];
+  }
+}
+
+/**
+ * Persists an environmental diagnostic log under a specific parcel.
+ */
+export async function addDiagnosticToParcel(parcelId: string, log: DiagnosticLog): Promise<void> {
+  const docId = log.id;
+  try {
+    const ref = doc(db, PATH_PARCELS, parcelId, "diagnostics", docId);
+    await setDoc(ref, {
+      id: log.id,
+      parcelId: log.parcelId,
+      timestamp: log.timestamp || new Date().toISOString(),
+      category: log.category,
+      apiSource: log.apiSource,
+      metricsJSONString: log.metricsJSONString || "{}",
+      summary: log.summary || "",
+      status: log.status || "info"
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, `${PATH_PARCELS}/${parcelId}/diagnostics/${docId}`);
+  }
+}
+
+/**
+ * Deletes a historic diagnostic log from a parcel's archive.
+ */
+export async function deleteDiagnosticFromParcel(parcelId: string, logId: string): Promise<void> {
+  try {
+    const ref = doc(db, PATH_PARCELS, parcelId, "diagnostics", logId);
+    await deleteDoc(ref);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `${PATH_PARCELS}/${parcelId}/diagnostics/${logId}`);
+  }
+}
+
 
 

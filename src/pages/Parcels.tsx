@@ -1,4 +1,6 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
+import { useSettings } from "../contexts/SettingsContext";
 import { Parcel } from "../types";
 import { 
   Plus, 
@@ -155,6 +157,8 @@ interface ParcelsProps {
 }
 
 export default function Parcels({ parcels, onSelectParcel, onNavigateToForm, onNavigateTo3D }: ParcelsProps) {
+  const { t } = useTranslation();
+  const { formatArea, formatYield } = useSettings();
   return (
     <div className="space-y-6" id="parcels-list-page-container">
       
@@ -162,31 +166,23 @@ export default function Parcels({ parcels, onSelectParcel, onNavigateToForm, onN
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-gray-150 pb-5">
         <div className="space-y-1">
           <span className="text-[10px] font-bold uppercase tracking-widest text-brand-green font-mono">
-            Spatial Telemetry Map
+            {t("parcels.headerSubtitle")}
           </span>
           <h1 className="text-3xl font-display font-black tracking-tight text-gray-950">
-            Drawn Field Parcels
+            {t("parcels.headerTitle")}
           </h1>
           <p className="text-xs text-gray-500 max-w-2xl">
-            Inspect drawn boundary nodes, live chlorophyll Sentinel measurements, and estimated harvest productivities.
+            {t("parcels.headerDesc")}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={onNavigateTo3D}
-            className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-950 text-white text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-800 transition-all cursor-pointer shadow-sm"
-          >
-            <Compass className="w-3.5 h-3.5" />
-            <span>Launch Interactive 3D Terrain</span>
-          </button>
-
-          <button
             onClick={onNavigateToForm}
             className="flex items-center gap-1.5 bg-brand-green hover:bg-brand-green-hover text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer shadow-sm"
           >
             <Plus className="w-4 h-4" />
-            <span>Draw Field boundaries</span>
+            <span>{t("parcels.drawFields")}</span>
           </button>
         </div>
       </div>
@@ -197,16 +193,16 @@ export default function Parcels({ parcels, onSelectParcel, onNavigateToForm, onN
             <Map className="w-6 h-6" />
           </div>
           <div className="space-y-1.5">
-            <h3 className="text-sm font-display font-black text-gray-950">No Drawn Field Boundaries</h3>
+            <h3 className="text-sm font-display font-black text-gray-950">{t("parcels.emptyTitle", "No Drawn Field Boundaries")}</h3>
             <p className="text-xs text-gray-500 max-w-sm leading-relaxed">
-              Before we can measure NDVI vegetation scores or render 3D terrain configurations, we must draw GPS boundary nodes first.
+              {t("parcels.emptyDesc", "Before we can measure NDVI vegetation scores or render 3D terrain configurations, we must draw GPS boundary nodes first.")}
             </p>
           </div>
           <button
             onClick={onNavigateToForm}
             className="bg-brand-green hover:bg-brand-green-hover text-white text-xs font-display font-extrabold px-5 py-3 rounded-xl shadow-sm transition-all"
           >
-            Open GPS Boundary Canvas
+            {t("parcels.emptyButton", "Open GPS Boundary Canvas")}
           </button>
         </div>
       ) : (
@@ -225,7 +221,7 @@ export default function Parcels({ parcels, onSelectParcel, onNavigateToForm, onN
 
                 {/* Overlay Area Indicator */}
                 <div className="absolute bottom-3 left-3 bg-slate-950/90 backdrop-blur-md border border-slate-800 text-[10px] font-mono font-bold text-white px-2.5 py-1 rounded-lg z-20">
-                  SURFACE: {parcel.area} HA
+                  SURFACE: {formatArea(parcel.area)}
                 </div>
 
                 {/* Overlay Crop tag */}
@@ -339,15 +335,15 @@ export default function Parcels({ parcels, onSelectParcel, onNavigateToForm, onN
                   <div className="text-left font-sans">
                     <span className="text-[9px] text-gray-400 uppercase tracking-widest leading-none block font-bold">Est. Yield</span>
                     <span className="text-sm font-display font-black text-gray-950 leading-none">
-                      {parcel.predictedYield.toFixed(1)} t/ha
+                      {formatYield(parcel.predictedYield)}
                     </span>
                   </div>
 
                   <button
                     onClick={() => onSelectParcel(parcel)}
-                    className="border border-brand-green/20 hover:border-brand-green text-brand-green hover:bg-emerald-500/[0.03] text-xs font-bold px-3.5 py-2 rounded-xl transition-all cursor-pointer"
+                    className="border border-brand-green bg-brand-green text-white hover:bg-brand-green-hover text-xs font-bold px-4 py-2 rounded-xl transition-all cursor-pointer shadow-sm"
                   >
-                    View 3D Telemetry
+                    Open Field
                   </button>
                 </div>
 

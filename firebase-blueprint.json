@@ -41,6 +41,22 @@
         "sourcedAt": { "type": "string" }
       },
       "required": ["id", "name", "icon"]
+    },
+    "diagnostic": {
+      "title": "Diagnostic Log",
+      "description": "A dynamic record storing historical environmental, soil, hydrology, and space intelligence queries from the platform's multi-API matrix",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "parcelId": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "category": { "type": "string" },
+        "apiSource": { "type": "string" },
+        "metricsJSONString": { "type": "string" },
+        "summary": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "parcelId", "timestamp", "category", "apiSource"]
     }
   },
   "firestore": {
@@ -51,6 +67,10 @@
     "/crops/{cropId}": {
       "schema": "crop",
       "description": "Dynamically-populated catalog of agricultural and horticultural crop types"
+    },
+    "/parcels/{parcelId}/diagnostics/{diagnosticId}": {
+      "schema": "diagnostic",
+      "description": "Historical, coordinate-aware sensor logs, environmental assessments, and Space Weather events retrieved via keyless APIs"
     }
   }
 }

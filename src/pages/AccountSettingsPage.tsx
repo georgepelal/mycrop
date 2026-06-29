@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   User, 
@@ -31,14 +32,15 @@ import { auth } from "../lib/firebase";
 const AVATAR_PRESETS = [
   { id: "agronomist", label: "Lead Agronomist", emoji: "🌱", color: "from-emerald-400 to-green-600" },
   { id: "telemetry", label: "GIS Specialist", emoji: "🛰️", color: "from-blue-400 to-indigo-600" },
-  { id: "drone", label: "Drone Operator", emoji: "🛸", color: "from-purple-400 to-violet-600" },
+  { id: "analyst", label: "Data Analyst", emoji: "📊", color: "from-purple-400 to-violet-600" },
   { id: "researcher", label: "Crop Scientist", emoji: "🔬", color: "from-amber-400 to-yellow-600" },
   { id: "engineer", label: "AgTech Engineer", emoji: "⚙️", color: "from-teal-400 to-emerald-600" },
-  { id: "pilot", label: "Farming Pilot", emoji: "🧑‍✈️", color: "from-sky-400 to-blue-600" }
+  { id: "manager", label: "Farm Manager", emoji: "🚜", color: "from-sky-400 to-blue-600" }
 ];
 
 export default function AccountSettingsPage() {
   const { user, login, logout } = useAuth();
+  const { t } = useTranslation();
 
   // Avatar presets & URL state
   const [photoURL, setPhotoURL] = useState(user?.photoURL || "🌱");
@@ -240,14 +242,14 @@ export default function AccountSettingsPage() {
           <div className="flex items-center gap-2 text-brand-green">
             <UserCheck className="w-5 h-5" />
             <span className="text-[10px] font-bold uppercase tracking-widest font-mono">
-              Identity Console
+              {t("account.headerSubtitle")}
             </span>
           </div>
           <h1 className="text-3xl font-display font-black tracking-tight text-gray-950">
-            Account Settings
+            {t("account.headerTitle")}
           </h1>
           <p className="text-xs text-gray-500 max-w-2xl leading-relaxed">
-            Manage your agent profile, change authentication keys, verify coordinates, and configure security access modules.
+            {t("account.headerDesc")}
           </p>
         </div>
 

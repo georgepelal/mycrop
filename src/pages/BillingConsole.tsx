@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   CreditCard, 
@@ -12,6 +13,7 @@ import {
   PlusCircle, 
   ArrowUpRight, 
   FileText, 
+  Check,
   CheckCircle, 
   Calendar, 
   Zap, 
@@ -39,6 +41,7 @@ interface Transaction {
 
 export default function BillingConsole() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   
   // Subscription Plan state
   const [currentPlan, setCurrentPlan] = useState<string>(() => {
@@ -85,7 +88,7 @@ export default function BillingConsole() {
       {
         id: "tx-104",
         type: "charge",
-        description: "Gemini Drone Multimodal Vision Biomass diagnostics",
+        description: "Gemini Satellite Multimodal Vision Biomass diagnostics",
         amount: -10,
         date: new Date().toLocaleDateString(),
         status: "success"
@@ -306,13 +309,13 @@ export default function BillingConsole() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-gray-150 pb-5">
         <div className="space-y-1">
           <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 font-mono block">
-            Cloud Billing Station v2
+            {t("billing.headerSubtitle")}
           </span>
           <h1 className="text-3xl font-display font-black tracking-tight text-gray-950 uppercase flex items-center gap-1.5">
-            Hybrid Billing & Credits Console <Wallet className="w-6 h-6 text-emerald-600 animate-pulse" />
+            {t("billing.headerTitle")} <Wallet className="w-6 h-6 text-emerald-600 animate-pulse" />
           </h1>
           <p className="text-xs text-gray-500 max-w-2xl leading-relaxed">
-            Link high-performance platform subscriptions with pay-as-you-go credit keys to run satellite image tasking, ISRIC soil composition checks, and custom agronomist reports.
+            {t("billing.headerDesc")}
           </p>
         </div>
 
@@ -352,7 +355,7 @@ export default function BillingConsole() {
                 <div className="bg-white p-3.5 rounded-xl border border-slate-150 space-y-1">
                   <strong className="text-slate-805 block">2. Metered System (Dynamic Layer)</strong>
                   <span className="text-[11px] text-gray-500 leading-normal block">
-                    Charges instant AgroCredits only for premium heavy computations like direct SoilGrids global GIS queries (50 Credits), custom satellite imagery manual sweeps (200 Credits), or red/NIR drone inspections (10 Credits).
+                    Charges instant AgroCredits only for premium heavy computations like direct SoilGrids global GIS queries (50 Credits), custom satellite imagery manual sweeps (200 Credits), or high-resolution spectral inspections (10 Credits).
                   </span>
                 </div>
               </div>
@@ -553,7 +556,7 @@ export default function BillingConsole() {
                   <span>3 ISRIC SoilGrids scans</span>
                 </li>
                 <li className="flex items-center gap-2 text-slate-400 line-through">
-                  <span>No visual drone inspectors</span>
+                  <span>No high-frequency satellite sweep</span>
                 </li>
                 <li className="flex items-center gap-2 text-slate-400 line-through">
                   <span>No monthly credit additions</span>
@@ -611,7 +614,7 @@ export default function BillingConsole() {
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>Visual drone analyzer activated</span>
+                  <span>Priority satellite sweep activated</span>
                 </li>
                 <li className="flex items-center gap-2 text-emerald-600 font-semibold bg-emerald-50/50 p-1.5 rounded-lg border border-emerald-100">
                   <Sparkles className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
@@ -640,7 +643,7 @@ export default function BillingConsole() {
               <div className="space-y-2">
                 <span className="text-[9px] font-bold bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md font-mono text-indigo-800 block w-fit">CORPORATE COOP</span>
                 <h4 className="text-xl font-display font-black text-gray-900">Enterprise AgTech</h4>
-                <p className="text-xs text-gray-400">For dynamic cooperatives seeking custom GIS maps and automated drones.</p>
+                <p className="text-xs text-gray-400">For dynamic cooperatives seeking custom GIS maps and advanced data scales.</p>
               </div>
 
               <div className="flex items-baseline">
@@ -665,7 +668,7 @@ export default function BillingConsole() {
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>DJI Flight drone flight automation api</span>
+                  <span>Advanced custom GIS/GeoJSON imports</span>
                 </li>
                 <li className="flex items-center gap-2 text-indigo-700 font-semibold bg-indigo-50/50 p-1.5 rounded-lg border border-indigo-100">
                   <Sparkles className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
@@ -727,11 +730,11 @@ export default function BillingConsole() {
 
             <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-150 rounded-xl">
               <div>
-                <strong className="text-slate-800 block">Multimodal Drone Vision diagnostics</strong>
-                <span className="text-[9px] text-gray-400">AI analysis on Red/NIR base64 attachments</span>
+                <strong className="text-slate-800 block">Climate Model Simulation Check</strong>
+                <span className="text-[9px] text-gray-400">Detailed 48-hour ensemble and spray wind-shear forecasts</span>
               </div>
               <span className="font-mono font-black text-[#059669] bg-emerald-50 px-2 py-1 rounded-md text-[11px] border border-emerald-100">
-                10 Credits / analysis
+                10 Credits / sweep
               </span>
             </div>
 

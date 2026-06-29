@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
@@ -17,3 +19,164 @@
 .animate-fade-in {
   animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Dark Mode Overrides for Legacy / Non-Utility Styled Cards & Text */
+html.dark, .dark {
+  color-scheme: dark;
+}
+
+html.dark body, .dark body, body.dark {
+  background-color: #020617 !important; /* slate-950 */
+  color: #f8fafc !important;
+}
+
+html.dark #mycrop-dashboard-shell, .dark #mycrop-dashboard-shell {
+  background-color: #020617 !important;
+}
+
+html.dark #mycrop-main-viewport, .dark #mycrop-main-viewport {
+  background-color: #020617 !important;
+}
+
+/* Card backgrounds - make them elevated slate-900 */
+html.dark .bg-white, .dark .bg-white {
+  background-color: #0f172a !important;
+}
+
+/* Glass effect bg-white/80 and backdrops in dark mode */
+html.dark .bg-white\/80, .dark .bg-white\/80 {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+}
+
+/* Sub-panels inside cards - make them slightly lighter slate-800 for contrast */
+html.dark .bg-slate-50,
+html.dark .bg-gray-50,
+.dark .bg-slate-50,
+.dark .bg-gray-50 {
+  background-color: #1e293b !important;
+}
+
+/* Slate 100 & Gray 100 */
+html.dark .bg-slate-100,
+html.dark .bg-gray-100,
+.dark .bg-slate-100,
+.dark .bg-gray-100 {
+  background-color: #1e293b !important;
+}
+
+/* Text overrides for absolute legibility */
+html.dark .text-slate-800,
+html.dark .text-gray-900,
+html.dark .text-gray-950,
+html.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-gray-900,
+.dark .text-gray-950,
+.dark .text-slate-900 {
+  color: #f8fafc !important;
+}
+
+html.dark .text-slate-600,
+html.dark .text-gray-700,
+html.dark .text-gray-800,
+html.dark .text-slate-700,
+.dark .text-slate-600,
+.dark .text-gray-700,
+.dark .text-gray-800,
+.dark .text-slate-700 {
+  color: #cbd5e1 !important;
+}
+
+html.dark .text-slate-500,
+html.dark .text-gray-500,
+.dark .text-slate-500,
+.dark .text-gray-500 {
+  color: #94a3b8 !important;
+}
+
+html.dark .text-slate-400,
+html.dark .text-gray-400,
+.dark .text-slate-400,
+.dark .text-gray-400 {
+  color: #64748b !important;
+}
+
+/* Border overrides */
+html.dark .border-slate-100,
+html.dark .border-slate-150,
+html.dark .border-slate-200,
+html.dark .border-gray-100,
+html.dark .border-gray-150,
+html.dark .border-gray-200,
+.dark .border-slate-100,
+.dark .border-slate-150,
+.dark .border-slate-200,
+.dark .border-gray-100,
+.dark .border-gray-150,
+.dark .border-gray-200 {
+  border-color: #334155 !important; /* slate-700 */
+}
+
+/* Input / Select overrides */
+html.dark select,
+html.dark input,
+html.dark textarea,
+.dark select,
+.dark input,
+.dark textarea {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
+}
+
+html.dark select option,
+.dark select option {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+/* Leaflet Dark Mode & Green Branding integration */
+.leaflet-tile {
+  transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+html.dark .leaflet-container, .dark .leaflet-container {
+  background-color: #020617 !important;
+}
+
+html.dark .leaflet-tile, .dark .leaflet-tile {
+  /* Blend tiles with the platform's slate-950 background for perfect matching color */
+  opacity: 0.8 !important;
+  filter: hue-rotate(215deg) saturate(1.2) brightness(0.85) contrast(1.1) !important;
+}
+
+html.dark .custom-point-icon div, .dark .custom-point-icon div {
+  border-color: #020617 !important;
+}
+
+/* Custom Leaflet Popup styling for dark mode support */
+.leaflet-popup-content-wrapper {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
+}
+.leaflet-popup-tip {
+  background-color: #ffffff !important;
+}
+.leaflet-popup-content {
+  margin: 12px !important;
+  line-height: inherit !important;
+}
+
+html.dark .leaflet-popup-content-wrapper, .dark .leaflet-popup-content-wrapper {
+  background-color: #0f172a !important; /* matches dark elevated slate-900 card backgrounds */
+  color: #f8fafc !important;
+  border: 1px solid #334155 !important;
+}
+html.dark .leaflet-popup-tip, .dark .leaflet-popup-tip {
+  background-color: #0f172a !important;
+  border: 1px solid #334155 !important;
+}
+
+

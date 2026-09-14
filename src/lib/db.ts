@@ -1,19 +1,17 @@
-import { 
-  collection, 
-  doc, 
-  getDoc,
-  getDocs, 
+import {
+  collection,
+  doc,
+  getDocs,
   setDoc, 
   deleteDoc, 
   query, 
   where 
 } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "./firebase";
-import { Parcel, UserSubscription, Crop, DiagnosticLog } from "../types";
+import { Parcel, Crop, DiagnosticLog } from "../types";
 
 // Collection path helper
 const PATH_PARCELS = "parcels";
-const PATH_USERS = "users";
 
 
 /**
@@ -65,11 +63,7 @@ export async function createParcelForUser(uid: string, parcel: Parcel): Promise<
       latitude: Number(parcel.latitude ?? 41.890),
       longitude: Number(parcel.longitude ?? -87.954),
       lastUpdated: parcel.lastUpdated || new Date().toLocaleDateString(),
-      billingStatus: parcel.billingStatus || "unpaid",
-      billingCycle: parcel.billingCycle || "monthly",
-      billingAmount: Number(parcel.billingAmount ?? 0),
-      billingExpiration: parcel.billingExpiration || "",
-      
+
       // SoilGrids telemetry fields defaults
       soilGridsClay: parcel.soilGridsClay !== undefined ? parcel.soilGridsClay : null,
       soilGridsSand: parcel.soilGridsSand !== undefined ? parcel.soilGridsSand : null,
@@ -107,11 +101,7 @@ export async function updateParcelForUser(uid: string, parcel: Parcel): Promise<
       latitude: Number(parcel.latitude ?? 41.890),
       longitude: Number(parcel.longitude ?? -87.954),
       lastUpdated: new Date().toLocaleDateString(),
-      billingStatus: parcel.billingStatus || "unpaid",
-      billingCycle: parcel.billingCycle || "monthly",
-      billingAmount: Number(parcel.billingAmount ?? 0),
-      billingExpiration: parcel.billingExpiration || "",
-      
+
       // SoilGrids telemetry fields defaults
       soilGridsClay: parcel.soilGridsClay !== undefined ? parcel.soilGridsClay : null,
       soilGridsSand: parcel.soilGridsSand !== undefined ? parcel.soilGridsSand : null,
@@ -135,45 +125,6 @@ export async function deleteParcelFromUser(parcelId: string): Promise<void> {
     await deleteDoc(ref);
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, `${PATH_PARCELS}/${parcelId}`);
-  }
-}
-
-/**
- * Retrieves the subscription or membership profile details for a verified user, or returns null.
- */
-export async function getUserSubscription(uid: string): Promise<UserSubscription | null> {
-  try {
-    const ref = doc(db, PATH_USERS, uid);
-    const snap = await getDoc(ref);
-    if (snap.exists()) {
-      return snap.data() as UserSubscription;
-    }
-    return null;
-  } catch (error) {
-    handleFirestoreError(error, OperationType.GET, `${PATH_USERS}/${uid}`);
-    return null;
-  }
-}
-
-/**
- * Saves or updates a user's subscription profile details in Firestore.
- */
-export async function saveUserSubscription(uid: string, subscription: UserSubscription): Promise<void> {
-  try {
-    const ref = doc(db, PATH_USERS, uid);
-    const payload = {
-      uid: subscription.uid,
-      planId: subscription.planId,
-      planName: subscription.planName,
-      status: subscription.status,
-      billingPeriod: subscription.billingPeriod,
-      currentPeriodEnd: subscription.currentPeriodEnd,
-      amount: Number(subscription.amount),
-      updatedAt: new Date().toLocaleDateString()
-    };
-    await setDoc(ref, payload);
-  } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, `${PATH_USERS}/${uid}`);
   }
 }
 

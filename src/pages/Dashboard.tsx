@@ -16,7 +16,6 @@ import { Parcel, CROP_PRESETS } from "../types";
 interface DashboardProps {
   parcels: Parcel[];
   activeParcelId: string;
-  onSelectParcel: (id: string) => void;
   onNavigate: (page: string) => void;
 }
 

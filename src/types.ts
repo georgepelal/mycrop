@@ -3,17 +3,6 @@ export interface Coordinate {
   lng: number;
 }
 
-export interface UserSubscription {
-  uid: string;
-  planId: string;
-  planName: string;
-  status: string;
-  billingPeriod: string;
-  currentPeriodEnd: string;
-  amount: number;
-  updatedAt: string;
-}
-
 export interface Parcel {
   id: string;
   name: string;
@@ -43,11 +32,7 @@ export interface Parcel {
   costPerHectare: number;
   marketPricePerTon: number;
   customImage: string | null;
-  billingStatus: string;
-  billingCycle: string;
-  billingAmount: number;
-  billingExpiration: string;
-  
+
   // Real SoilGrids Global API records
   soilGridsClay?: number;
   soilGridsSand?: number;
@@ -115,14 +100,6 @@ export const CROP_PRESETS: Record<string, { icon: string }> = {
   "Avocados": { icon: "🥑" },
   "Millet": { icon: "🌾" }
 };
-
-export function calculateFieldRate(farmSize: number) {
-  const size = farmSize || 0;
-  return {
-    monthly: Math.max(10, Math.round(size * 150)),
-    yearly: Math.max(100, Math.round(size * 120 * 12))
-  };
-}
 
 export interface Crop {
   id: string;

@@ -57,10 +57,6 @@ const DEFAULT_3D_PARCELS: Parcel[] = [
     userId: "mock-agronomist-george",
     ownerId: "mock-agronomist-george",
     customImage: null,
-    billingStatus: "unpaid",
-    billingCycle: "monthly",
-    billingAmount: 0,
-    billingExpiration: ""
   },
   {
     id: "p2",
@@ -91,10 +87,6 @@ const DEFAULT_3D_PARCELS: Parcel[] = [
     userId: "mock-agronomist-george",
     ownerId: "mock-agronomist-george",
     customImage: null,
-    billingStatus: "unpaid",
-    billingCycle: "monthly",
-    billingAmount: 0,
-    billingExpiration: ""
   },
   {
     id: "p3",
@@ -125,10 +117,6 @@ const DEFAULT_3D_PARCELS: Parcel[] = [
     userId: "mock-agronomist-george",
     ownerId: "mock-agronomist-george",
     customImage: null,
-    billingStatus: "unpaid",
-    billingCycle: "monthly",
-    billingAmount: 0,
-    billingExpiration: ""
   }
 ];
 

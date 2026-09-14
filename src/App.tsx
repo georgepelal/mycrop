@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Routes, Route, Navigate, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import { Parcel } from "./types";
@@ -13,6 +14,7 @@ import ClimateProjections from "./pages/ClimateProjections";
 import EnvironmentalTelemetry from "./pages/EnvironmentalTelemetry";
 import DiagnosticAnalytics from "./pages/DiagnosticAnalytics";
 import CropAutoDetection from "./pages/CropAutoDetection";
+import Chat from "./pages/Chat";
 import Parcels from "./pages/Parcels";
 import ParcelForm from "./pages/ParcelForm";
 import SettingsPage from "./pages/SettingsPage";
@@ -20,7 +22,6 @@ import AccountSettingsPage from "./pages/AccountSettingsPage";
 import Field3DView from "./pages/Field3DView";
 import AuthPage from "./pages/AuthPage";
 import CompanyLogo from "./components/CompanyLogo";
-import BillingConsole from "./pages/BillingConsole";
 import LanguageSwitcher from "./components/LanguageSwitcher";
 import ThemeToggle from "./components/ThemeToggle";
 import FrostFreezeRisk from "./pages/FrostFreezeRisk";
@@ -81,26 +82,22 @@ import RegionalCountrySovereign from "./pages/RegionalCountrySovereign";
 import GbifSpeciesSuggest from "./pages/GbifSpeciesSuggest";
 import FieldWeatherPage from "./pages/FieldWeatherPage";
 
-
 // Icons
 import {
   LayoutDashboard,
   Map,
   Compass,
-  LineChart,
   CloudSun,
   Layers,
   Settings as SettingsIcon,
-  UserCheck,
   LogOut,
   Sliders,
   Menu,
   X,
-  Wallet,
-  Beaker,
   ChevronDown,
   ChevronRight,
   Activity,
+  Bot,
 } from "lucide-react";
 
 const INITIAL_PARCELS: Parcel[] = [
@@ -133,10 +130,6 @@ const INITIAL_PARCELS: Parcel[] = [
     userId: "mock-agronomist-george",
     ownerId: "mock-agronomist-george",
     customImage: null,
-    billingStatus: "unpaid",
-    billingCycle: "monthly",
-    billingAmount: 0,
-    billingExpiration: "",
   },
   {
     id: "p2",
@@ -167,10 +160,6 @@ const INITIAL_PARCELS: Parcel[] = [
     userId: "mock-agronomist-george",
     ownerId: "mock-agronomist-george",
     customImage: null,
-    billingStatus: "unpaid",
-    billingCycle: "monthly",
-    billingAmount: 0,
-    billingExpiration: "",
   },
   {
     id: "p3",
@@ -201,87 +190,289 @@ const INITIAL_PARCELS: Parcel[] = [
     userId: "mock-agronomist-george",
     ownerId: "mock-agronomist-george",
     customImage: null,
-    billingStatus: "unpaid",
-    billingCycle: "monthly",
-    billingAmount: 0,
-    billingExpiration: "",
   },
 ];
+
+// ---------------------------------------------------------------------------
+// Data-driven sidebar navigation config
+// ---------------------------------------------------------------------------
+
+interface NavLeaf {
+  id: string;
+  label: string;
+}
+
+type NavTheme = "emerald" | "amber" | "slate" | "purple";
+
+interface NavGroup {
+  key: string;
+  label: string;
+  icon?: React.ComponentType<{ className?: string }>;
+  theme: NavTheme;
+  items?: NavLeaf[];
+  subGroups?: NavGroup[];
+}
+
+const NAV_SECTIONS: NavGroup[] = [
+  {
+    key: "weather",
+    label: "Weather",
+    icon: CloudSun,
+    theme: "emerald",
+    items: [{ id: "field-weather", label: "🌦️ Field Forecast" }],
+  },
+  {
+    key: "soil",
+    label: "Soil Insights",
+    icon: Layers,
+    theme: "amber",
+    items: [
+      { id: "soil-composition", label: "🧪 Soil Composition & Texture" },
+      { id: "field-deep-soil-temp", label: "🌡️ Deep Soil Temperature" },
+      { id: "soil-organic-carbon", label: "🌱 Soil Organic Carbon" },
+      { id: "nasa-agronomic-soil", label: "🛰️ Agronomic Soil Health" },
+    ],
+  },
+  {
+    key: "settings-group",
+    label: "Settings",
+    icon: SettingsIcon,
+    theme: "slate",
+    items: [
+      { id: "settings", label: "⚙️ Control Settings" },
+      { id: "account", label: "👤 Account Settings" },
+    ],
+    subGroups: [
+      {
+        key: "science",
+        label: "Scientific Tools",
+        icon: Sliders,
+        theme: "purple",
+        subGroups: [
+          {
+            key: "science-weather",
+            label: "🌦️ Weather & Climate",
+            theme: "purple",
+            items: [
+              { id: "field-ensemble", label: "Ensemble Dispersion (30+ Models)" },
+              { id: "field-decadal", label: "Decadal Historical Reanalysis" },
+              { id: "field-climate", label: "Long-Term Climate Projections" },
+              { id: "field-env", label: "Environmental Telemetry" },
+              { id: "field-frost-risk", label: "Frost/Freeze Risk" },
+              { id: "field-gdd", label: "Growing Degree Days (GDD)" },
+              { id: "field-solar-energy", label: "Solar Energy Potential" },
+              { id: "field-uv", label: "UV Radiation & Boundary Layer" },
+              { id: "field-allergen", label: "Allergen & Pollen Forecasts" },
+              { id: "field-greenhouse", label: "Global Greenhouse Gas Trends" },
+              { id: "field-noaa-space-weather", label: "NOAA Space Weather & GPS" },
+              { id: "field-iss-overhead", label: "ISS Space Tracking" },
+            ],
+          },
+          {
+            key: "science-crop",
+            label: "🌱 Plant & Yield",
+            theme: "purple",
+            items: [
+              { id: "field-crop-detection", label: "Crop Auto-Detection API" },
+              { id: "field-pest-disease", label: "Pest & Disease Risk" },
+              { id: "field-lodging", label: "Crop Lodging Shear Risk" },
+              { id: "field-stomatal", label: "Stomatal Conductance" },
+              { id: "field-par-ppfd", label: "PAR / PPFD Data" },
+              { id: "field-pollinator", label: "Pollinator Outlooks" },
+              { id: "field-dictionary", label: "Crop Dictionary" },
+              { id: "field-chilling-hours", label: "Agronomic Chilling Hours" },
+              { id: "field-crop-library", label: "Crop Literature Library" },
+            ],
+          },
+          {
+            key: "science-soil",
+            label: "💧 Soil & Hydrology",
+            theme: "purple",
+            items: [
+              { id: "field-agronomic-et0", label: "Agronomic Evapotranspiration" },
+              { id: "field-wue", label: "Crop Water Efficiency" },
+              { id: "field-soil-trafficability", label: "Soil Trafficability" },
+              { id: "field-soil-salinity", label: "Soil Salinity" },
+              { id: "field-deep-soil-temp", label: "Deep Soil Temperature" },
+              { id: "field-nutrient-leaching", label: "Agronomic Nutrient Leaching" },
+              { id: "field-flood-hydrology", label: "Flood Hydrology" },
+              { id: "field-usgs-waterwatch", label: "USGS WaterWatch" },
+              { id: "field-openepi-soil", label: "Soil Conditions" },
+            ],
+          },
+          {
+            key: "science-eco",
+            label: "🌍 Geo & Hazards",
+            theme: "purple",
+            items: [
+              { id: "field-cropland-fire-risk", label: "Cropland Fire Risk" },
+              { id: "field-local-biodiversity", label: "Local Biodiversity" },
+              { id: "field-nasa-eonet", label: "Environmental Events" },
+              { id: "field-gdacs-hazards", label: "GDACS Active Hazards" },
+              { id: "field-usgs-seismic", label: "USGS Seismic Maps" },
+              { id: "field-copernicus-reflectance", label: "Satellite Reflectance" },
+              { id: "field-osm-natural", label: "OSM Natural Features" },
+            ],
+          },
+          {
+            key: "science-markets",
+            label: "📉 Markets & Macro",
+            theme: "purple",
+            items: [
+              { id: "field-usda-crop-pricing", label: "USDA Crop Pricing" },
+              { id: "field-open-exchange-rates", label: "Open Exchange Rates" },
+              { id: "field-world-bank-forests", label: "World Bank Forests" },
+              { id: "field-regional-indicators", label: "Regional Indicators" },
+            ],
+          },
+          {
+            key: "science-other",
+            label: "🔬 Core Open Data APIs",
+            theme: "purple",
+            items: [
+              { id: "field-marine-hydro", label: "Marine Hydrodynamics" },
+              { id: "field-air-quality", label: "Air Quality & Aerosols" },
+              { id: "field-openepi-fire", label: "Forest Fire Risk" },
+              { id: "field-nasa-climatology", label: "Climatology" },
+              { id: "field-river-discharge", label: "River Discharge" },
+              { id: "field-agri-soil", label: "Agri-Soil Moisture" },
+              { id: "field-historical-archive", label: "Historical Archive" },
+              { id: "field-sunrise-sunset", label: "Sunrise & Astronomy" },
+              { id: "field-plant-dictionary", label: "Plant Dictionary Lookup" },
+              { id: "field-gbif-occurrences", label: "GBIF Occurrences" },
+              { id: "field-osm-reverse", label: "Reverse Geocoding" },
+              { id: "field-client-ip", label: "Client IP Geolocation" },
+              { id: "field-public-holidays", label: "Public Holidays" },
+              { id: "field-regional-sovereign", label: "Regional/Sovereign Meta" },
+              { id: "field-gbif-suggest", label: "GBIF Species Suggest" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+];
+
+const THEME: Record<NavTheme, { headerActive: string; border: string; leafActive: string }> = {
+  emerald: {
+    headerActive: "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-400 shadow-sm",
+    border: "border-emerald-100 dark:border-emerald-900",
+    leafActive: "text-brand-green dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 font-bold",
+  },
+  amber: {
+    headerActive: "bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-400 shadow-sm",
+    border: "border-amber-100 dark:border-amber-900",
+    leafActive: "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 font-bold",
+  },
+  slate: {
+    headerActive: "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 shadow-sm",
+    border: "border-slate-200 dark:border-slate-800",
+    leafActive: "text-brand-green dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 font-bold",
+  },
+  purple: {
+    headerActive: "bg-purple-50 dark:bg-purple-950/20 text-purple-750 dark:text-purple-400",
+    border: "border-purple-100 dark:border-purple-900",
+    leafActive: "text-brand-green bg-emerald-50 font-bold",
+  },
+};
+
+const HEADER_INACTIVE = "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/40";
+const SUBHEADER_INACTIVE = "text-slate-500 hover:text-slate-800";
+const LEAF_INACTIVE = "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/20";
+
+// Collects every leaf page id reachable under a group (recursing through subGroups),
+// used to auto-expand a section when the active route is inside it.
+function collectLeafIds(group: NavGroup): string[] {
+  const ids = (group.items || []).map((i) => i.id);
+  (group.subGroups || []).forEach((sg) => ids.push(...collectLeafIds(sg)));
+  return ids;
+}
+
+function NavSection({
+  group,
+  depth,
+  expandedCategories,
+  toggleCategory,
+  pathname,
+  onLeafClick,
+}: {
+  group: NavGroup;
+  depth: number;
+  expandedCategories: string[];
+  toggleCategory: (key: string) => void;
+  pathname: string;
+  onLeafClick: () => void;
+}) {
+  const theme = THEME[group.theme];
+  const isDescendantActive = collectLeafIds(group).some((id) => pathname === "/" + id);
+  const isExpanded = expandedCategories.includes(group.key) || isDescendantActive;
+  const Icon = group.icon;
+
+  const headerPad = depth === 0 ? "px-4 py-3 rounded-2xl text-xs" : depth === 1 ? "px-2 py-1.5 rounded-lg text-[10px]" : "px-2 py-1 rounded text-[9px]";
+  const iconSize = depth === 0 ? "w-4.5 h-4.5" : "w-3.5 h-3.5";
+  const chevronSize = depth === 0 ? "w-4 h-4" : depth === 1 ? "w-3.5 h-3.5" : "w-3 h-3";
+  const headerActiveClass = depth <= 1 ? theme.headerActive : "text-purple-700";
+  const headerInactiveClass = depth <= 1 ? HEADER_INACTIVE : SUBHEADER_INACTIVE;
+  const wrapperBorder = depth === 0 ? `border-l-2 ${theme.border}` : depth === 1 ? `border-l ${theme.border}` : "border-l border-purple-50";
+  const wrapperPad = depth === 0 ? "pl-4 pt-2 space-y-1.5 ml-6 mt-1" : depth === 1 ? "pl-2 pt-2 space-y-1.5 ml-4 mt-1" : "pl-2 space-y-1 mt-1 ml-2";
+  const leafPad = depth === 0 ? "px-3 py-1.5 rounded-md text-[10px]" : "px-2 py-1 rounded text-[9px]";
+
+  return (
+    <div className={depth === 0 ? "mt-4" : undefined}>
+      <button
+        onClick={() => toggleCategory(group.key)}
+        className={`w-full flex justify-between items-center ${headerPad} font-bold transition-all text-left cursor-pointer ${
+          isExpanded ? headerActiveClass : headerInactiveClass
+        }`}
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          {Icon && <Icon className={`${iconSize} shrink-0`} />}
+          <span className="truncate">{group.label}</span>
+        </div>
+        {isExpanded ? <ChevronDown className={chevronSize} /> : <ChevronRight className={chevronSize} />}
+      </button>
+
+      {isExpanded && (
+        <div className={`${wrapperPad} ${wrapperBorder}`}>
+          {(group.items || []).map((leaf) => (
+            <NavLink
+              key={leaf.id}
+              to={"/" + leaf.id}
+              onClick={onLeafClick}
+              className={({ isActive }) =>
+                `w-full block ${leafPad} transition-all text-left cursor-pointer ${isActive ? theme.leafActive : LEAF_INACTIVE}`
+              }
+            >
+              {leaf.label}
+            </NavLink>
+          ))}
+
+          {group.subGroups && group.subGroups.length > 0 && (
+            <div className={depth === 0 ? "mt-2 border-t border-slate-100 dark:border-slate-800/60 pt-2" : undefined}>
+              {group.subGroups.map((sg) => (
+                <NavSection
+                  key={sg.key}
+                  group={sg}
+                  depth={depth + 1}
+                  expandedCategories={expandedCategories}
+                  toggleCategory={toggleCategory}
+                  pathname={pathname}
+                  onLeafClick={onLeafClick}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function DashboardShell() {
   const { user, logout } = useAuth();
   const { t } = useTranslation();
-  const [activePage, setActivePage] = useState<
-    | "parcels"
-    | "parcel-form"
-    | "field-overview"
-    | "field-3d"
-    | "field-soil"
-    | "field-ensemble"
-    | "field-decadal"
-    | "field-climate"
-    | "field-env"
-    | "field-crop-detection"
-    | "field-frost-risk"
-    | "field-gdd"
-    | "field-uv"
-    | "field-allergen"
-    | "field-greenhouse"
-    | "field-pest-disease"
-    | "field-lodging"
-    | "field-stomatal"
-    | "field-par-ppfd"
-    | "field-pollinator"
-    | "field-dictionary"
-    | "soil-composition"
-    | "soil-organic-carbon"
-    | "nasa-agronomic-soil"
-    | "field-openepi-soil"
-    | "field-agronomic-et0"
-    | "field-soil-trafficability"
-    | "field-soil-salinity"
-    | "field-deep-soil-temp"
-    | "field-nutrient-leaching"
-    | "field-flood-hydrology"
-    | "field-usgs-waterwatch"
-    | "field-cropland-fire-risk"
-    | "field-local-biodiversity"
-    | "field-nasa-eonet"
-    | "field-gdacs-hazards"
-    | "field-usgs-seismic"
-    | "field-copernicus-reflectance"
-    | "field-osm-natural"
-    | "field-usda-crop-pricing"
-    | "field-open-exchange-rates"
-    | "field-world-bank-forests"
-    | "field-regional-indicators"
-    | "field-solar-energy"
-    | "field-chilling-hours"
-    | "field-wue"
-    | "field-noaa-space-weather"
-    | "field-iss-overhead"
-    | "field-crop-library"
-    | "field-marine-hydro"
-    | "field-air-quality"
-    | "field-openepi-fire"
-    | "field-nasa-climatology"
-    | "field-river-discharge"
-    | "field-agri-soil"
-    | "field-historical-archive"
-    | "field-sunrise-sunset"
-    | "field-plant-dictionary"
-    | "field-gbif-occurrences"
-    | "field-osm-reverse"
-    | "field-client-ip"
-    | "field-public-holidays"
-    | "field-regional-sovereign"
-    | "field-gbif-suggest"
-    | "field-weather"
-
-    | "settings"
-    | "account"
-    | "billing"
-  >("parcels");
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Local state for parcels
   const [parcels, setParcels] = useState<Parcel[]>(() => {
@@ -337,16 +528,16 @@ function DashboardShell() {
     );
   };
 
-  useEffect(() => {
-    // We don't auto-set activeParcelId unless needed inside a field view
-  }, []);
-
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Save parcels to localStorage
   useEffect(() => {
     localStorage.setItem("mycrop_parcels", JSON.stringify(parcels));
   }, [parcels]);
+
+  // Shared navigation callback handed to every tool page (their `onNavigate` prop
+  // contract is unchanged — only the implementation now pushes a real route).
+  const onNavigate = (page: string) => navigate("/" + page);
 
   const handleAddParcel = async (newParcel: any) => {
     const defaultUid = user?.uid || "mock-agronomist-george";
@@ -371,10 +562,6 @@ function DashboardShell() {
       costPerHectare: Number(newParcel.costPerHectare ?? 900),
       marketPricePerTon: Number(newParcel.marketPricePerTon ?? 210),
       customImage: newParcel.customImage ?? null,
-      billingStatus: newParcel.billingStatus ?? "unpaid",
-      billingCycle: newParcel.billingCycle ?? "monthly",
-      billingAmount: Number(newParcel.billingAmount ?? 0),
-      billingExpiration: "",
     };
 
     if (user && user.uid) {
@@ -386,371 +573,12 @@ function DashboardShell() {
     }
 
     setParcels([fresh, ...parcels]);
-    setActivePage("parcels");
+    navigate("/parcels");
   };
 
   const handleSelectParcelForOverview = (parcel: Parcel) => {
     setActiveParcelId(parcel.id);
-    setActivePage("field-overview");
-  };
-
-  const renderActivePage = () => {
-    switch (activePage) {
-      case "parcels":
-        return (
-          <Parcels
-            parcels={parcels}
-            onSelectParcel={handleSelectParcelForOverview}
-            onNavigateToForm={() => setActivePage("parcel-form")}
-            onNavigateTo3D={() => {}} // Remove global 3d view
-          />
-        );
-      case "parcel-form":
-        return (
-          <ParcelForm
-            onAddParcel={handleAddParcel}
-            onNavigateBack={() => setActivePage("parcels")}
-          />
-        );
-      case "field-overview":
-        return (
-          <Dashboard
-            parcels={parcels}
-            activeParcelId={activeParcelId || parcels[0]?.id || ""}
-            onSelectParcel={(id) => setActiveParcelId(id)}
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-3d":
-        return (
-          <Field3DView
-            parcels={parcels}
-            initialSelectedParcelId={activeParcelId || undefined}
-          />
-        );
-      case "soil-composition":
-        return (
-          <SoilCompositionTexture 
-            parcels={parcels}
-            activeParcelId={activeParcelId}
-            onSelectParcel={(id) => setActiveParcelId(id)}
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "soil-organic-carbon":
-        return (
-          <SoilOrganicCarbon
-            parcels={parcels}
-            activeParcelId={activeParcelId}
-            onSelectParcel={setActiveParcelId}
-          />
-        );
-      case "nasa-agronomic-soil":
-        return (
-          <NasaAgronomicSoil
-            parcels={parcels}
-            activeParcelId={activeParcelId}
-            onSelectParcel={setActiveParcelId}
-          />
-        );
-      case "field-ensemble":
-        return (
-          <EnsembleDispersion
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-decadal":
-        return (
-          <DecadalReanalysis
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-climate":
-        return (
-          <ClimateProjections
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-env":
-        return (
-          <EnvironmentalTelemetry
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-frost-risk":
-        return (
-          <FrostFreezeRisk
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-gdd":
-        return (
-          <GrowingDegreeDays
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-uv":
-        return (
-          <UvAndBoundaryLayer
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-allergen":
-        return (
-          <AllergenPollenForecasts
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-greenhouse":
-        return (
-          <GlobalGreenhouseGas
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-soil":
-        return (
-          <DiagnosticAnalytics
-            parcels={parcels}
-            activeParcelId={activeParcelId || parcels[0]?.id || ""}
-            onSelectParcel={(id) => setActiveParcelId(id)}
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-crop-detection":
-        return (
-          <CropAutoDetection
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-pest-disease":
-        return (
-          <PestDiseaseRisk
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-lodging":
-        return (
-          <CropLodgingShear
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-stomatal":
-        return (
-          <StomatalConductance
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-par-ppfd":
-        return (
-          <ParPpfdData
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-pollinator":
-        return (
-          <PollinatorOutlooks
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-dictionary":
-        return (
-          <CropDictionary
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-openepi-soil":
-        return (
-          <OpenEpiSoilQuality
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-agronomic-et0":
-        return (
-          <AgronomicEvapotranspiration
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-soil-trafficability":
-        return (
-          <SoilTrafficability
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-soil-salinity":
-        return (
-          <SoilSalinityCapillary
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-deep-soil-temp":
-        return (
-          <DeepSoilTemperature
-            parcels={parcels}
-            activeParcelId={activeParcelId}
-            onSelectParcel={(id) => setActiveParcelId(id)}
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-nutrient-leaching":
-        return (
-          <AgronomicNutrientLeaching
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-flood-hydrology":
-        return (
-          <FloodHydrology
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-usgs-waterwatch":
-        return (
-          <USGSWaterWatch
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-cropland-fire-risk":
-        return (
-          <CroplandFireRisk
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-local-biodiversity":
-        return (
-          <LocalBiodiversity
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-nasa-eonet":
-        return (
-          <NasaEonetEvents
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-gdacs-hazards":
-        return (
-          <GdacsActiveHazards
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-usgs-seismic":
-        return (
-          <USGSSeismicMaps
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-copernicus-reflectance":
-        return (
-          <CopernicusReflectance
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-osm-natural":
-        return (
-          <OSMNaturalFeatures
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-usda-crop-pricing":
-        return (
-          <USDACropPricing
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-open-exchange-rates":
-        return (
-          <OpenExchangeRates
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-world-bank-forests":
-        return (
-          <WorldBankForests
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-regional-indicators":
-        return (
-          <RegionalIndicators
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-solar-energy":
-        return (
-          <SolarEnergyPotential
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-chilling-hours":
-        return (
-          <AgronomicChillingHours
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-wue":
-        return (
-          <CropWaterEfficiency
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-noaa-space-weather":
-        return (
-          <NoaaSpaceWeather
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-iss-overhead":
-        return (
-          <IssSatelliteOverhead
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-crop-library":
-        return (
-          <CropLiteratureLibrary
-            onNavigate={(page) => setActivePage(page as any)}
-          />
-        );
-      case "field-marine-hydro": return <MarineHydrodynamics />;
-      case "field-air-quality": return <AirQualityAerosols />;
-      case "field-openepi-fire": return <OpenEpiForestFire />;
-      case "field-nasa-climatology": return <ClimatologyNasa />;
-      case "field-river-discharge": return <RiverDischarge />;
-      case "field-agri-soil": return <AgriSoilMoisture />;
-      case "field-historical-archive": return <HistoricalArchive />;
-      case "field-sunrise-sunset": return <SunriseSunsetAstronomy />;
-      case "field-plant-dictionary": return <PlantDictionaryLookup />;
-      case "field-gbif-occurrences": return <GbifLocalOccurrences />;
-      case "field-osm-reverse": return <OsmReverseGeocode />;
-      case "field-client-ip": return <ClientIpGeolocation />;
-      case "field-public-holidays": return <LocalPublicHolidays />;
-      case "field-regional-sovereign": return <RegionalCountrySovereign />;
-      case "field-gbif-suggest": return <GbifSpeciesSuggest />;
-      case "field-weather":
-        return (
-          <FieldWeatherPage
-            parcels={parcels}
-            activeParcelId={activeParcelId}
-            onSelectParcel={(id) => setActiveParcelId(id)}
-          />
-        );
-      case "settings":
-        return <SettingsPage />;
-      case "account":
-        return <AccountSettingsPage />;
-      case "billing":
-        return <BillingConsole />;
-
-      default:
-        return (
-          <Parcels
-            parcels={parcels}
-            onSelectParcel={handleSelectParcelForOverview}
-            onNavigateToForm={() => setActivePage("parcel-form")}
-            onNavigateTo3D={() => {}}
-          />
-        );
-    }
+    navigate("/field-overview");
   };
 
   if (!user) {
@@ -787,12 +615,12 @@ function DashboardShell() {
         >
           <button
             onClick={() => {
-              setActivePage("parcels");
+              navigate("/parcels");
               setActiveParcelId(null);
               setMobileMenuOpen(false);
             }}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all text-left cursor-pointer ${
-              activePage === "parcels" || activePage === "parcel-form"
+              location.pathname === "/parcels" || location.pathname === "/parcel-form" || location.pathname === "/"
                 ? "bg-brand-green text-white shadow-md shadow-emerald-500/10"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
             }`}
@@ -806,978 +634,72 @@ function DashboardShell() {
               <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 pl-2">
                 Active Field
               </div>
-              <button
-                onClick={() => {
-                  setActivePage("field-overview");
-                  setMobileMenuOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
-                  activePage === "field-overview"
-                    ? "bg-emerald-50 text-brand-green"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                }`}
+              <NavLink
+                to="/field-overview"
+                onClick={() => setMobileMenuOpen(false)}
+                className={({ isActive }) =>
+                  `w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
+                    isActive ? "bg-emerald-50 text-brand-green" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                  }`
+                }
               >
                 <LayoutDashboard className="w-4 h-4 shrink-0" />
                 <span>Field Overview</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActivePage("field-3d");
-                  setMobileMenuOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
-                  activePage === "field-3d"
-                    ? "bg-emerald-50 text-brand-green"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                }`}
+              </NavLink>
+              <NavLink
+                to="/field-3d"
+                onClick={() => setMobileMenuOpen(false)}
+                className={({ isActive }) =>
+                  `w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
+                    isActive ? "bg-emerald-50 text-brand-green" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                  }`
+                }
               >
                 <Compass className="w-4 h-4 shrink-0" />
                 <span>3D Terrain</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActivePage("field-soil");
-                  setMobileMenuOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
-                  activePage === "field-soil"
-                    ? "bg-emerald-50 text-brand-green"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                }`}
+              </NavLink>
+              <NavLink
+                to="/field-soil"
+                onClick={() => setMobileMenuOpen(false)}
+                className={({ isActive }) =>
+                  `w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
+                    isActive ? "bg-emerald-50 text-brand-green" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                  }`
+                }
               >
                 <Activity className="w-4 h-4 shrink-0" />
                 <span>Soil & Diagnostics</span>
-              </button>
+              </NavLink>
+              <NavLink
+                to="/chat"
+                onClick={() => setMobileMenuOpen(false)}
+                className={({ isActive }) =>
+                  `w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
+                    isActive ? "bg-emerald-50 text-brand-green" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                  }`
+                }
+              >
+                <Bot className="w-4 h-4 shrink-0" />
+                <span>{t("sidebar.aiChat")}</span>
+              </NavLink>
             </div>
           )}
 
-          {/* Weather Category */}
-          <div className="mt-4" id="weather-insights-sidebar-category">
-            <button
-              onClick={() => toggleCategory("weather")}
-              className={`w-full flex justify-between items-center px-4 py-3 rounded-2xl text-xs font-bold transition-all text-left cursor-pointer ${
-                expandedCategories.includes("weather") || activePage === "field-weather"
-                  ? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-400 shadow-sm"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/40"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <CloudSun className="w-4.5 h-4.5 shrink-0" />
-                <span>Weather</span>
-              </div>
-              {expandedCategories.includes("weather") || activePage === "field-weather" ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
-            </button>
-
-            {(expandedCategories.includes("weather") || activePage === "field-weather") && (
-              <div className="pl-4 pt-2 space-y-1.5 border-l-2 border-emerald-100 dark:border-emerald-900 ml-6 mt-1">
-                <button
-                  onClick={() => {
-                    setActivePage("field-weather");
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`w-full block px-3 py-1.5 rounded-md text-[10px] transition-all text-left cursor-pointer ${
-                    activePage === "field-weather"
-                      ? "text-brand-green dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 font-bold"
-                      : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/20"
-                  }`}
-                >
-                  🌦️ Field Forecast
-                </button>
-              </div>
-            )}
-          </div>
-
           <div className="h-px bg-slate-100 dark:bg-slate-800 my-4" />
 
-          {/* Soil Insights Category */}
-          <div className="mt-4" id="soil-insights-sidebar-category">
-            <button
-              onClick={() => toggleCategory("soil")}
-              className={`w-full flex justify-between items-center px-4 py-3 rounded-2xl text-xs font-bold transition-all text-left cursor-pointer ${
-                expandedCategories.includes("soil") || activePage === "soil-composition" || activePage === "field-deep-soil-temp" || activePage === "soil-organic-carbon" || activePage === "nasa-agronomic-soil"
-                  ? "bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-400 shadow-sm"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/40"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Layers className="w-4.5 h-4.5 shrink-0" />
-                <span>Soil Insights</span>
-              </div>
-              {expandedCategories.includes("soil") || activePage === "soil-composition" || activePage === "field-deep-soil-temp" || activePage === "soil-organic-carbon" || activePage === "nasa-agronomic-soil" ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
-            </button>
-
-            {(expandedCategories.includes("soil") || activePage === "soil-composition" || activePage === "field-deep-soil-temp" || activePage === "soil-organic-carbon" || activePage === "nasa-agronomic-soil") && (
-              <div className="pl-4 pt-2 space-y-1.5 border-l-2 border-amber-100 dark:border-amber-900 ml-6 mt-1">
-                <button
-                  onClick={() => {
-                    setActivePage("soil-composition");
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`w-full block px-3 py-1.5 rounded-md text-[10px] transition-all text-left cursor-pointer ${
-                    activePage === "soil-composition"
-                      ? "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 font-bold"
-                      : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/20"
-                  }`}
-                >
-                  🧪 Soil Composition & Texture
-                </button>
-                <button
-                  onClick={() => {
-                    setActivePage("field-deep-soil-temp");
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`w-full block px-3 py-1.5 rounded-md text-[10px] transition-all text-left cursor-pointer ${
-                    activePage === "field-deep-soil-temp"
-                      ? "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 font-bold"
-                      : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/20"
-                  }`}
-                >
-                  🌡️ Deep Soil Temperature
-                </button>
-                <button
-                  onClick={() => {
-                    setActivePage("soil-organic-carbon");
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`w-full block px-3 py-1.5 rounded-md text-[10px] transition-all text-left cursor-pointer ${
-                    activePage === "soil-organic-carbon"
-                      ? "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 font-bold"
-                      : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/20"
-                  }`}
-                >
-                  🌱 Soil Organic Carbon
-                </button>
-                <button
-                  onClick={() => {
-                    setActivePage("nasa-agronomic-soil");
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`w-full block px-3 py-1.5 rounded-md text-[10px] transition-all text-left cursor-pointer ${
-                    activePage === "nasa-agronomic-soil"
-                      ? "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 font-bold"
-                      : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/20"
-                  }`}
-                >
-                  🛰️ Agronomic Soil Health
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="h-px bg-slate-100 dark:bg-slate-800 my-4" />
-
-          {/* Settings Category with Sub-categories */}
-          <div id="settings-sidebar-category">
-            <button
-              onClick={() => toggleCategory("settings-group")}
-              className={`w-full flex justify-between items-center px-4 py-3 rounded-2xl text-xs font-bold transition-all text-left cursor-pointer ${
-                expandedCategories.includes("settings-group") || activePage === "settings" || activePage === "account" || activePage === "billing" || expandedCategories.includes("science")
-                  ? "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 shadow-sm"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/40"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <SettingsIcon className="w-4.5 h-4.5 shrink-0" />
-                <span>Settings</span>
-              </div>
-              {expandedCategories.includes("settings-group") || activePage === "settings" || activePage === "account" || activePage === "billing" || expandedCategories.includes("science") ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
-            </button>
-
-            {(expandedCategories.includes("settings-group") || activePage === "settings" || activePage === "account" || activePage === "billing" || expandedCategories.includes("science")) && (
-              <div className="pl-4 pt-2 space-y-2 border-l-2 border-slate-200 dark:border-slate-800 ml-6 mt-1 text-left">
-                {/* 1. Control Settings */}
-                <button
-                  onClick={() => {
-                    setActivePage("settings");
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-[10px] transition-all text-left cursor-pointer ${
-                    activePage === "settings"
-                      ? "text-brand-green dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 font-bold"
-                      : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/20"
-                  }`}
-                >
-                  ⚙️ Control Settings
-                </button>
-
-                {/* 2. Account Settings */}
-                <button
-                  onClick={() => {
-                    setActivePage("account");
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-[10px] transition-all text-left cursor-pointer ${
-                    activePage === "account"
-                      ? "text-brand-green dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 font-bold"
-                      : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/20"
-                  }`}
-                >
-                  👤 Account Settings
-                </button>
-
-                {/* 3. Billing */}
-                <button
-                  onClick={() => {
-                    setActivePage("billing");
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-[10px] transition-all text-left cursor-pointer ${
-                    activePage === "billing"
-                      ? "text-brand-green dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 font-bold"
-                      : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/20"
-                  }`}
-                >
-                  💳 {t("sidebar.billing")}
-                </button>
-
-                {/* 4. Tools nested sub-accordion */}
-                <div className="mt-2 border-t border-slate-100 dark:border-slate-800/60 pt-2">
-                  <button
-                    onClick={() => toggleCategory("science")}
-                    className={`w-full flex justify-between items-center px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all text-left cursor-pointer ${
-                      expandedCategories.includes("science")
-                        ? "bg-purple-50 dark:bg-purple-950/20 text-purple-750 dark:text-purple-400"
-                        : "text-slate-500 dark:text-slate-400 hover:text-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/10"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Sliders className="w-3.5 h-3.5 shrink-0" />
-                      <span>Scientific Tools</span>
-                    </div>
-                    {expandedCategories.includes("science") ? (
-                      <ChevronDown className="w-3.5 h-3.5" />
-                    ) : (
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-
-                  {expandedCategories.includes("science") && (
-                    <div className="pl-2 pt-2 space-y-1.5 border-l border-purple-100 dark:border-purple-900 ml-4 mt-1">
-                      {/* Sub-Category 1: Weather & Climate */}
-                      <div>
-                        <button
-                          onClick={() => toggleCategory("science-weather")}
-                          className={`w-full flex justify-between items-center px-2 py-1 rounded text-[9px] font-bold transition-all text-left cursor-pointer ${
-                            expandedCategories.includes("science-weather")
-                              ? "text-purple-700"
-                              : "text-slate-500 hover:text-slate-800"
-                          }`}
-                        >
-                          <span className="truncate">🌦️ Weather & Climate</span>
-                          {expandedCategories.includes("science-weather") ? (
-                            <ChevronDown className="w-3 h-3" />
-                          ) : (
-                            <ChevronRight className="w-3 h-3" />
-                          )}
-                        </button>
-
-                        {expandedCategories.includes("science-weather") && (
-                          <div className="pl-2 space-y-1 mt-1 border-l border-purple-50 ml-2">
-                            <button
-                              onClick={() => {
-                                setActivePage("field-ensemble");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-ensemble"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:bg-slate-50"
-                              }`}
-                            >
-                              Ensemble Dispersion (30+ Models)
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-decadal");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-decadal"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:bg-slate-50"
-                              }`}
-                            >
-                              Decadal Historical Reanalysis
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-climate");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-climate"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:bg-slate-50"
-                              }`}
-                            >
-                              Long-Term Climate Projections
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-env");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-env"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:bg-slate-50"
-                              }`}
-                            >
-                              Environmental Telemetry
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-frost-risk");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-frost-risk"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:bg-slate-50"
-                              }`}
-                            >
-                              Frost/Freeze Risk
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-gdd");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-gdd"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:bg-slate-50"
-                              }`}
-                            >
-                              Growing Degree Days (GDD)
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-solar-energy");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-solar-energy"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:bg-slate-50"
-                              }`}
-                            >
-                              Solar Energy Potential
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-uv");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-uv"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:bg-slate-50"
-                              }`}
-                            >
-                              UV Radiation & Boundary Layer
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-allergen");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-allergen"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:bg-slate-50"
-                              }`}
-                            >
-                              Allergen & Pollen Forecasts
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-greenhouse");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-greenhouse"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:bg-slate-50"
-                              }`}
-                            >
-                              Global Greenhouse Gas Trends
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-noaa-space-weather");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-noaa-space-weather"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:bg-slate-50"
-                              }`}
-                            >
-                              NOAA Space Weather & GPS
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-iss-overhead");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-iss-overhead"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:bg-slate-50"
-                              }`}
-                            >
-                              ISS Space Tracking
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Sub-Category 2: Plant & Yield */}
-                      <div>
-                        <button
-                          onClick={() => toggleCategory("science-crop")}
-                          className={`w-full flex justify-between items-center px-2 py-1 rounded text-[9px] font-bold transition-all text-left cursor-pointer ${
-                            expandedCategories.includes("science-crop")
-                              ? "text-purple-700"
-                              : "text-slate-500 hover:text-slate-800"
-                          }`}
-                        >
-                          <span className="truncate">🌱 Plant & Yield</span>
-                          {expandedCategories.includes("science-crop") ? (
-                            <ChevronDown className="w-3 h-3" />
-                          ) : (
-                            <ChevronRight className="w-3 h-3" />
-                          )}
-                        </button>
-                        {expandedCategories.includes("science-crop") && (
-                          <div className="pl-2 space-y-1 mt-1 border-l border-purple-50 ml-2">
-                            <button
-                              onClick={() => {
-                                setActivePage("field-crop-detection");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-crop-detection"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:bg-slate-50"
-                              }`}
-                            >
-                              Crop Auto-Detection API
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-pest-disease");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-pest-disease"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              Pest & Disease Risk
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-lodging");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-lodging"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              Crop Lodging Shear Risk
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-stomatal");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-stomatal"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              Stomatal Conductance
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-par-ppfd");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-par-ppfd"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              PAR / PPFD Data
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-pollinator");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-pollinator"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              Pollinator Outlooks
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-dictionary");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-dictionary"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              Crop Dictionary
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-chilling-hours");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-chilling-hours"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              Agronomic Chilling Hours
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-crop-library");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-crop-library"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              Crop Literature Library
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Sub-Category 3: Soil & Hydrology */}
-                      <div>
-                        <button
-                          onClick={() => toggleCategory("science-soil")}
-                          className={`w-full flex justify-between items-center px-2 py-1 rounded text-[9px] font-bold transition-all text-left cursor-pointer ${
-                            expandedCategories.includes("science-soil")
-                              ? "text-purple-700"
-                              : "text-slate-500 hover:text-slate-800"
-                          }`}
-                        >
-                          <span className="truncate">💧 Soil & Hydrology</span>
-                          {expandedCategories.includes("science-soil") ? (
-                            <ChevronDown className="w-3 h-3" />
-                          ) : (
-                            <ChevronRight className="w-3 h-3" />
-                          )}
-                        </button>
-                        {expandedCategories.includes("science-soil") && (
-                          <div className="pl-2 space-y-1 mt-1 border-l border-purple-50 ml-2">
-                            <button
-                              onClick={() => {
-                                setActivePage("field-agronomic-et0");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-agronomic-et0"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              Agronomic Evapotranspiration
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-wue");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-wue"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              Crop Water Efficiency
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-soil-trafficability");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-soil-trafficability"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              Soil Trafficability
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-soil-salinity");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-soil-salinity"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              Soil Salinity
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-deep-soil-temp");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-deep-soil-temp"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              Deep Soil Temperature
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-nutrient-leaching");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-nutrient-leaching"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              Agronomic Nutrient Leaching
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-flood-hydrology");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-flood-hydrology"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              Flood Hydrology
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-usgs-waterwatch");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-usgs-waterwatch"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              USGS WaterWatch
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-openepi-soil");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-openepi-soil"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              Soil Conditions
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Sub-Category 4: Geo & Hazards */}
-                      <div>
-                        <button
-                          onClick={() => toggleCategory("science-eco")}
-                          className={`w-full flex justify-between items-center px-2 py-1 rounded text-[9px] font-bold transition-all text-left cursor-pointer ${
-                            expandedCategories.includes("science-eco")
-                              ? "text-purple-700"
-                              : "text-slate-500 hover:text-slate-900"
-                          }`}
-                        >
-                          <span className="truncate">🌍 Geo & Hazards</span>
-                          {expandedCategories.includes("science-eco") ? (
-                            <ChevronDown className="w-3 h-3" />
-                          ) : (
-                            <ChevronRight className="w-3 h-3" />
-                          )}
-                        </button>
-                        {expandedCategories.includes("science-eco") && (
-                          <div className="pl-2 space-y-1 mt-1 border-l border-purple-50 ml-2">
-                            <button
-                              onClick={() => {
-                                setActivePage("field-cropland-fire-risk");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-cropland-fire-risk"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              Cropland Fire Risk
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-local-biodiversity");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-local-biodiversity"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              Local Biodiversity
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-nasa-eonet");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-nasa-eonet"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              Environmental Events
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-gdacs-hazards");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-gdacs-hazards"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              GDACS Active Hazards
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-usgs-seismic");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-usgs-seismic"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              USGS Seismic Maps
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-copernicus-reflectance");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-copernicus-reflectance"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              Satellite Reflectance
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-osm-natural");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-osm-natural"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              OSM Natural Features
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Sub-Category 5: Markets & Macro */}
-                      <div>
-                        <button
-                          onClick={() => toggleCategory("science-markets")}
-                          className={`w-full flex justify-between items-center px-2 py-1 rounded text-[9px] font-bold transition-all text-left cursor-pointer ${
-                            expandedCategories.includes("science-markets")
-                              ? "text-purple-700"
-                              : "text-slate-500 hover:text-slate-900"
-                          }`}
-                        >
-                          <span className="truncate">📉 Markets & Macro</span>
-                          {expandedCategories.includes("science-markets") ? (
-                            <ChevronDown className="w-3 h-3" />
-                          ) : (
-                            <ChevronRight className="w-3 h-3" />
-                          )}
-                        </button>
-                        {expandedCategories.includes("science-markets") && (
-                          <div className="pl-2 space-y-1 mt-1 border-l border-purple-50 ml-2">
-                            <button
-                              onClick={() => {
-                                setActivePage("field-usda-crop-pricing");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer mt-1 ${
-                                activePage === "field-usda-crop-pricing"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              USDA Crop Pricing
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-open-exchange-rates");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-open-exchange-rates"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              Open Exchange Rates
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-world-bank-forests");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-world-bank-forests"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              World Bank Forests
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActivePage("field-regional-indicators");
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer ${
-                                activePage === "field-regional-indicators"
-                                  ? "text-brand-green bg-emerald-50 font-bold"
-                                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                              }`}
-                            >
-                              Regional Indicators
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Sub-Category 6: Core Open Data APIs */}
-                      <div>
-                        <button
-                          onClick={() => toggleCategory("science-other")}
-                          className={`w-full flex justify-between items-center px-2 py-1 rounded text-[9px] font-bold transition-all text-left cursor-pointer ${
-                            expandedCategories.includes("science-other")
-                              ? "text-purple-700"
-                              : "text-slate-500 hover:text-slate-900"
-                          }`}
-                        >
-                          <span className="truncate">🔬 Core Open Data APIs</span>
-                          {expandedCategories.includes("science-other") ? (
-                            <ChevronDown className="w-3 h-3" />
-                          ) : (
-                            <ChevronRight className="w-3 h-3" />
-                          )}
-                        </button>
-                        {expandedCategories.includes("science-other") && (
-                          <div className="pl-2 space-y-1 mt-1 border-l border-purple-50 ml-2">
-                            {[
-                              { id: "field-marine-hydro", label: "Marine Hydrodynamics" },
-                              { id: "field-air-quality", label: "Air Quality & Aerosols" },
-                              { id: "field-openepi-fire", label: "Forest Fire Risk" },
-                              { id: "field-nasa-climatology", label: "Climatology" },
-                              { id: "field-river-discharge", label: "River Discharge" },
-                              { id: "field-agri-soil", label: "Agri-Soil Moisture" },
-                              { id: "field-historical-archive", label: "Historical Archive" },
-                              { id: "field-sunrise-sunset", label: "Sunrise & Astronomy" },
-                              { id: "field-plant-dictionary", label: "Plant Dictionary Lookup" },
-                              { id: "field-gbif-occurrences", label: "GBIF Occurrences" },
-                              { id: "field-osm-reverse", label: "Reverse Geocoding" },
-                              { id: "field-client-ip", label: "Client IP Geolocation" },
-                              { id: "field-public-holidays", label: "Public Holidays" },
-                              { id: "field-regional-sovereign", label: "Regional/Sovereign Meta" },
-                              { id: "field-gbif-suggest", label: "GBIF Species Suggest" },
-                            ].map((pageItem) => (
-                              <button
-                                key={pageItem.id}
-                                onClick={() => {
-                                  setActivePage(pageItem.id as any);
-                                  setMobileMenuOpen(false);
-                                }}
-                                className={`w-full block px-2 py-1 rounded text-[9px] transition-all text-left cursor-pointer mt-1 ${
-                                  activePage === pageItem.id
-                                    ? "text-brand-green bg-emerald-50 font-bold"
-                                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                                }`}
-                              >
-                                {pageItem.label}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                    </div>
-                  )}
-                </div>
-
-              </div>
-            )}
-          </div>
-
-
+          {NAV_SECTIONS.map((group, idx) => (
+            <React.Fragment key={group.key}>
+              <NavSection
+                group={group}
+                depth={0}
+                expandedCategories={expandedCategories}
+                toggleCategory={toggleCategory}
+                pathname={location.pathname}
+                onLeafClick={() => setMobileMenuOpen(false)}
+              />
+              {idx < NAV_SECTIONS.length - 1 && <div className="h-px bg-slate-100 dark:bg-slate-800 my-4" />}
+            </React.Fragment>
+          ))}
         </nav>
 
         <div className="mt-auto pt-2 pb-2 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between px-2">
@@ -1818,7 +740,173 @@ function DashboardShell() {
         className="flex-1 overflow-x-hidden overflow-y-auto px-6 py-8"
         id="mycrop-main-viewport"
       >
-        <div className="max-w-7xl mx-auto space-y-6">{renderActivePage()}</div>
+        <div className="max-w-7xl mx-auto space-y-6">
+          <Routes>
+            <Route path="/" element={<Navigate to="/parcels" replace />} />
+            <Route
+              path="/parcels"
+              element={
+                <Parcels
+                  parcels={parcels}
+                  onSelectParcel={handleSelectParcelForOverview}
+                  onNavigateToForm={() => navigate("/parcel-form")}
+                  onNavigateTo3D={() => {}}
+                />
+              }
+            />
+            <Route
+              path="/parcel-form"
+              element={<ParcelForm onAddParcel={handleAddParcel} onNavigateBack={() => navigate("/parcels")} />}
+            />
+            <Route
+              path="/field-overview"
+              element={
+                <Dashboard
+                  parcels={parcels}
+                  activeParcelId={activeParcelId || parcels[0]?.id || ""}
+                  onNavigate={onNavigate}
+                />
+              }
+            />
+            <Route
+              path="/field-3d"
+              element={<Field3DView parcels={parcels} initialSelectedParcelId={activeParcelId || undefined} />}
+            />
+            <Route
+              path="/soil-composition"
+              element={
+                <SoilCompositionTexture
+                  parcels={parcels}
+                  activeParcelId={activeParcelId}
+                  onSelectParcel={(id) => setActiveParcelId(id)}
+                  onNavigate={onNavigate}
+                />
+              }
+            />
+            <Route
+              path="/soil-organic-carbon"
+              element={
+                <SoilOrganicCarbon
+                  parcels={parcels}
+                  activeParcelId={activeParcelId}
+                  onSelectParcel={setActiveParcelId}
+                  onNavigate={onNavigate}
+                />
+              }
+            />
+            <Route
+              path="/nasa-agronomic-soil"
+              element={
+                <NasaAgronomicSoil
+                  parcels={parcels}
+                  activeParcelId={activeParcelId}
+                  onSelectParcel={setActiveParcelId}
+                  onNavigate={onNavigate}
+                />
+              }
+            />
+            <Route path="/field-ensemble" element={<EnsembleDispersion onNavigate={onNavigate} />} />
+            <Route path="/field-decadal" element={<DecadalReanalysis onNavigate={onNavigate} />} />
+            <Route path="/field-climate" element={<ClimateProjections onNavigate={onNavigate} />} />
+            <Route path="/field-env" element={<EnvironmentalTelemetry onNavigate={onNavigate} />} />
+            <Route path="/field-frost-risk" element={<FrostFreezeRisk onNavigate={onNavigate} />} />
+            <Route path="/field-gdd" element={<GrowingDegreeDays onNavigate={onNavigate} />} />
+            <Route path="/field-uv" element={<UvAndBoundaryLayer onNavigate={onNavigate} />} />
+            <Route path="/field-allergen" element={<AllergenPollenForecasts onNavigate={onNavigate} />} />
+            <Route path="/field-greenhouse" element={<GlobalGreenhouseGas onNavigate={onNavigate} />} />
+            <Route
+              path="/field-soil"
+              element={
+                <DiagnosticAnalytics
+                  parcels={parcels}
+                  activeParcelId={activeParcelId || parcels[0]?.id || ""}
+                  onSelectParcel={(id) => setActiveParcelId(id)}
+                  onNavigate={onNavigate}
+                />
+              }
+            />
+            <Route
+              path="/chat"
+              element={
+                <Chat
+                  parcels={parcels}
+                  activeParcelId={activeParcelId || parcels[0]?.id || ""}
+                  onSelectParcel={(id) => setActiveParcelId(id)}
+                />
+              }
+            />
+            <Route path="/field-crop-detection" element={<CropAutoDetection onNavigate={onNavigate} />} />
+            <Route path="/field-pest-disease" element={<PestDiseaseRisk onNavigate={onNavigate} />} />
+            <Route path="/field-lodging" element={<CropLodgingShear onNavigate={onNavigate} />} />
+            <Route path="/field-stomatal" element={<StomatalConductance onNavigate={onNavigate} />} />
+            <Route path="/field-par-ppfd" element={<ParPpfdData onNavigate={onNavigate} />} />
+            <Route path="/field-pollinator" element={<PollinatorOutlooks onNavigate={onNavigate} />} />
+            <Route path="/field-dictionary" element={<CropDictionary onNavigate={onNavigate} />} />
+            <Route path="/field-openepi-soil" element={<OpenEpiSoilQuality onNavigate={onNavigate} />} />
+            <Route path="/field-agronomic-et0" element={<AgronomicEvapotranspiration onNavigate={onNavigate} />} />
+            <Route path="/field-soil-trafficability" element={<SoilTrafficability onNavigate={onNavigate} />} />
+            <Route path="/field-soil-salinity" element={<SoilSalinityCapillary onNavigate={onNavigate} />} />
+            <Route
+              path="/field-deep-soil-temp"
+              element={
+                <DeepSoilTemperature
+                  parcels={parcels}
+                  activeParcelId={activeParcelId}
+                  onSelectParcel={(id) => setActiveParcelId(id)}
+                  onNavigate={onNavigate}
+                />
+              }
+            />
+            <Route path="/field-nutrient-leaching" element={<AgronomicNutrientLeaching onNavigate={onNavigate} />} />
+            <Route path="/field-flood-hydrology" element={<FloodHydrology onNavigate={onNavigate} />} />
+            <Route path="/field-usgs-waterwatch" element={<USGSWaterWatch onNavigate={onNavigate} />} />
+            <Route path="/field-cropland-fire-risk" element={<CroplandFireRisk onNavigate={onNavigate} />} />
+            <Route path="/field-local-biodiversity" element={<LocalBiodiversity onNavigate={onNavigate} />} />
+            <Route path="/field-nasa-eonet" element={<NasaEonetEvents onNavigate={onNavigate} />} />
+            <Route path="/field-gdacs-hazards" element={<GdacsActiveHazards onNavigate={onNavigate} />} />
+            <Route path="/field-usgs-seismic" element={<USGSSeismicMaps onNavigate={onNavigate} />} />
+            <Route path="/field-copernicus-reflectance" element={<CopernicusReflectance onNavigate={onNavigate} />} />
+            <Route path="/field-osm-natural" element={<OSMNaturalFeatures onNavigate={onNavigate} />} />
+            <Route path="/field-usda-crop-pricing" element={<USDACropPricing onNavigate={onNavigate} />} />
+            <Route path="/field-open-exchange-rates" element={<OpenExchangeRates onNavigate={onNavigate} />} />
+            <Route path="/field-world-bank-forests" element={<WorldBankForests onNavigate={onNavigate} />} />
+            <Route path="/field-regional-indicators" element={<RegionalIndicators onNavigate={onNavigate} />} />
+            <Route path="/field-solar-energy" element={<SolarEnergyPotential onNavigate={onNavigate} />} />
+            <Route path="/field-chilling-hours" element={<AgronomicChillingHours onNavigate={onNavigate} />} />
+            <Route path="/field-wue" element={<CropWaterEfficiency onNavigate={onNavigate} />} />
+            <Route path="/field-noaa-space-weather" element={<NoaaSpaceWeather onNavigate={onNavigate} />} />
+            <Route path="/field-iss-overhead" element={<IssSatelliteOverhead onNavigate={onNavigate} />} />
+            <Route path="/field-crop-library" element={<CropLiteratureLibrary onNavigate={onNavigate} />} />
+            <Route path="/field-marine-hydro" element={<MarineHydrodynamics />} />
+            <Route path="/field-air-quality" element={<AirQualityAerosols />} />
+            <Route path="/field-openepi-fire" element={<OpenEpiForestFire />} />
+            <Route path="/field-nasa-climatology" element={<ClimatologyNasa />} />
+            <Route path="/field-river-discharge" element={<RiverDischarge />} />
+            <Route path="/field-agri-soil" element={<AgriSoilMoisture />} />
+            <Route path="/field-historical-archive" element={<HistoricalArchive />} />
+            <Route path="/field-sunrise-sunset" element={<SunriseSunsetAstronomy />} />
+            <Route path="/field-plant-dictionary" element={<PlantDictionaryLookup />} />
+            <Route path="/field-gbif-occurrences" element={<GbifLocalOccurrences />} />
+            <Route path="/field-osm-reverse" element={<OsmReverseGeocode />} />
+            <Route path="/field-client-ip" element={<ClientIpGeolocation />} />
+            <Route path="/field-public-holidays" element={<LocalPublicHolidays />} />
+            <Route path="/field-regional-sovereign" element={<RegionalCountrySovereign />} />
+            <Route path="/field-gbif-suggest" element={<GbifSpeciesSuggest />} />
+            <Route
+              path="/field-weather"
+              element={
+                <FieldWeatherPage
+                  parcels={parcels}
+                  activeParcelId={activeParcelId}
+                  onSelectParcel={(id) => setActiveParcelId(id)}
+                />
+              }
+            />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/account" element={<AccountSettingsPage />} />
+            <Route path="*" element={<Navigate to="/parcels" replace />} />
+          </Routes>
+        </div>
       </main>
     </div>
   );

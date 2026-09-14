@@ -259,10 +259,10 @@ export default function SoilCompositionTexture({ parcels, activeParcelId, onSele
                     </div>
                   ),
                   renderBlock: (rowIndex, colIndex) => {
-                    const type = blocksRow[colIndex] || 'sand';
-                    const colors = {
+                    const type = (blocksRow[colIndex] || 'sand') as 'sand' | 'silt' | 'clay';
+                    const colors: Record<'sand' | 'silt' | 'clay', string> = {
                       sand: 'bg-[#e3c16f] border-t-[#fceab5] border-l-[#fceab5] border-b-[#a88942] border-r-[#a88942]',
-                      silt: 'bg-[#986445] border-t-[#bd825d] border-l-[#bd825d] border-b-[#633f2a] border-r-[#633f2a]', 
+                      silt: 'bg-[#986445] border-t-[#bd825d] border-l-[#bd825d] border-b-[#633f2a] border-r-[#633f2a]',
                       clay: 'bg-[#a4a8aa] border-t-[#d1d4d6] border-l-[#d1d4d6] border-b-[#737678] border-r-[#737678]'
                     };
                     const color = colors[type];

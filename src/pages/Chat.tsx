@@ -1,19 +1,19 @@
 import React, { useState, useRef, useEffect } from "react";
-import { 
-  Send, 
-  Sparkles, 
-  Sprout, 
-  Bot, 
-  User, 
-  Loader2, 
+import {
+  Send,
+  Sparkles,
+  Sprout,
+  Bot,
+  User,
+  Loader2,
   HelpCircle,
   MessageSquare,
   RefreshCw,
-  Compass
+  Compass,
+  MapPin
 } from "lucide-react";
 import Markdown from "react-markdown";
 import { Parcel } from "../types";
-import FieldPaymentLock from "../components/FieldPaymentLock";
 
 interface Message {
   role: "user" | "assistant";
@@ -21,8 +21,9 @@ interface Message {
 }
 
 interface ChatProps {
-  activeParcel: Parcel;
-  onUpdateParcel: (updated: Parcel) => void;
+  parcels: Parcel[];
+  activeParcelId: string | null;
+  onSelectParcel: (id: string) => void;
 }
 
 const SUGGESTED_PROMPTS = [
@@ -32,58 +33,46 @@ const SUGGESTED_PROMPTS = [
   "Can you explain our satellite NDVI spectrum?"
 ];
 
-export default function Chat({ activeParcel, onUpdateParcel }: ChatProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content: `### 👋 Welcome to MyCrop AI Agronomist Advisor!
-      
+function welcomeMessage(activeParcel: Parcel): Message {
+  return {
+    role: "assistant",
+    content: `### 👋 Welcome to MyCrop AI Agronomist Advisor!
+
 I am your interactive precision agronomist co-pilot. I have connected directly to the micro-sensor telemetry for your active focus field: **${activeParcel.name}** containing **${activeParcel.cropType}**.
 
 I keep all spectral Sentinel indices (NDVI: **${activeParcel.ndviValue}**, NDWI: **${activeParcel.ndwiValue}**) and soil testing parameters (pH: **${activeParcel.soilPH}**, Nitrogen: **${activeParcel.nitrogen}**, Moisture: **${activeParcel.soilMoisture}%**) in memory to formulate hyper-localized crop guides.
 
 **Ask me anything, or choose a diagnostic query below:**`
-    }
-  ]);
+  };
+}
+
+export default function Chat({ parcels, activeParcelId, onSelectParcel }: ChatProps) {
+  const activeParcel = parcels?.find(p => p.id === activeParcelId) || parcels?.[0];
+
+  const [messages, setMessages] = useState<Message[]>(activeParcel ? [welcomeMessage(activeParcel)] : []);
 
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Reset the conversation whenever the focused field changes
+  useEffect(() => {
+    if (activeParcel) {
+      setMessages([welcomeMessage(activeParcel)]);
+    }
+  }, [activeParcel?.id]);
 
   // Scroll to bottom of chat
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  const handleActivateTelemetry = async (cycle: "monthly" | "yearly", amount: number) => {
-    onUpdateParcel({
-      ...activeParcel,
-      billingStatus: "active",
-      billingCycle: cycle,
-      billingAmount: amount,
-      billingExpiration: new Date(Date.now() + (cycle === "monthly" ? 30 : 365) * 24 * 60 * 60 * 1000).toLocaleDateString()
-    });
-  };
-
-  const isPremiumLocked = activeParcel.billingStatus !== "active";
-
-  if (isPremiumLocked) {
+  if (!activeParcel) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-display font-extrabold text-gray-900 tracking-tight">
-            MyCrop AI Agronomist Chat
-          </h2>
-          <p className="text-sm text-gray-500 font-medium mt-1">
-            Consult our regional AI model about custom soil tests, crop defense protocols, and chlorophyll indices.
-          </p>
-        </div>
-        <FieldPaymentLock 
-          parcel={activeParcel}
-          onActivate={handleActivateTelemetry}
-          title="Agronomist Chat Diagnostics Locked"
-          description="In order to generate hyper-localized answers referencing Sentinel indices, water stress indexes, and crop parameters, activate premium telemetry streaming for this individual field."
-        />
+      <div className="flex flex-col items-center justify-center p-12 bg-white rounded-3xl border border-slate-200">
+        <MapPin className="w-12 h-12 text-slate-300 mb-4" />
+        <h3 className="text-lg font-bold text-slate-800">No Field Selected</h3>
+        <p className="text-sm text-slate-500 mt-1">Please select a field to chat with the AI agronomist</p>
       </div>
     );
   }
@@ -140,8 +129,31 @@ Reset successful. Ready to analyze **${activeParcel.name}** (**${activeParcel.cr
   };
 
   return (
+    <div className="space-y-4">
+      {/* Parcel / Field selector bar */}
+      {parcels.length > 1 && (
+        <div className="flex flex-wrap gap-2 items-center bg-white border border-gray-100 p-2 rounded-xl shadow-sm">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-2 pr-1 flex items-center gap-1">
+            <MapPin className="w-3.5 h-3.5 text-slate-400" /> Field:
+          </span>
+          {parcels.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => onSelectParcel(p.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                p.id === activeParcel.id
+                  ? "bg-brand-green text-white shadow-sm"
+                  : "bg-slate-50 hover:bg-slate-100 text-slate-600"
+              }`}
+            >
+              {p.name} <span className="opacity-70 font-normal">({p.cropType})</span>
+            </button>
+          ))}
+        </div>
+      )}
+
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-140px)] min-h-[550px]">
-      
+
       {/* LEFT COLUMN: Context & Active telemetry overview */}
       <div className="lg:col-span-4 bg-white border border-gray-200 rounded-3xl p-5 shadow-sm flex flex-col justify-between overflow-y-auto">
         <div className="space-y-4">
@@ -331,6 +343,7 @@ Reset successful. Ready to analyze **${activeParcel.name}** (**${activeParcel.cr
 
       </div>
 
+    </div>
     </div>
   );
 }

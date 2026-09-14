@@ -9,27 +9,26 @@ service cloud.firestore {
 
     // Secure Parcels Collection
     match /parcels/{parcelId} {
-      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow list: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null && (resource.data.ownerId == request.auth.uid || resource.data.userId == request.auth.uid);
       
       allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.ownerId == request.auth.uid
                     && request.resource.data.name is string
                     && request.resource.data.name.size() <= 100;
 
       allow update: if request.auth != null 
-                    && resource.data.userId == request.auth.uid
-                    && request.resource.data.userId == request.auth.uid
+                    && resource.data.ownerId == request.auth.uid
+                    && request.resource.data.ownerId == request.auth.uid
                     && request.resource.data.name is string
                     && request.resource.data.name.size() <= 100;
 
-      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
 
       // Diagnostics Subcollection under Parcel
       match /diagnostics/{diagnosticId} {
-        allow read, list, delete: if request.auth != null && get(/databases/$(database)/documents/parcels/$(parcelId)).data.userId == request.auth.uid;
+        allow read, list, delete: if request.auth != null && get(/databases/$(database)/documents/parcels/$(parcelId)).data.ownerId == request.auth.uid;
         allow create, update: if request.auth != null 
-                              && get(/databases/$(database)/documents/parcels/$(parcelId)).data.userId == request.auth.uid
+                              && get(/databases/$(database)/documents/parcels/$(parcelId)).data.ownerId == request.auth.uid
                               && request.resource.data.parcelId == parcelId;
       }
     }

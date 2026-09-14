@@ -328,7 +328,7 @@ export default function AccountSettingsPage() {
                       {activePreset.label}
                     </span>
                     <span className="text-[10px] bg-slate-100 text-slate-700 font-bold font-mono px-2 py-0.5 rounded-full uppercase">
-                      COPERNICUS LINKED
+                      SATELLITE LINKED
                     </span>
                   </div>
                   <h4 className="text-xs font-black text-gray-950 leading-tight">

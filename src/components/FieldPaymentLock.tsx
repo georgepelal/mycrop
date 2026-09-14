@@ -64,7 +64,7 @@ export default function FieldPaymentLock({
   // Mock activation steps
   const activationSteps = [
     "Compiling geographical polygon bounds...",
-    "Querying Copernicus Sentinel-2 imagery nodes...",
+    "Querying Satellite Sentinel-2 imagery nodes...",
     "Validating secure Stripe billing token...",
     "Activating high-precision biochemical algorithm...",
     "Establishing active satellite telemetry stream..."

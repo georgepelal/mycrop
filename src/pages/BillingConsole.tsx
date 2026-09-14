@@ -72,7 +72,7 @@ export default function BillingConsole() {
       {
         id: "tx-102",
         type: "charge",
-        description: "ISRIC SoilGrids™ Deep Composition Query - Field [North Barley Ring]",
+        description: "Global Deep Composition Query - Field [North Barley Ring]",
         amount: -50,
         date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toLocaleDateString(),
         status: "success"
@@ -492,7 +492,7 @@ export default function BillingConsole() {
                     style={{ width: `${Math.min(100, (soilGridsQueriesUsed / (currentPlan === "free" ? 3 : currentPlan === "pro" ? 20 : 100)) * 100)}%` }}
                   />
                 </div>
-                <span className="text-[8px] text-gray-400 block pt-0.5">ISRIC database access credentials.</span>
+                <span className="text-[8px] text-gray-400 block pt-0.5">Global soil database access credentials.</span>
               </div>
 
             </div>
@@ -553,7 +553,7 @@ export default function BillingConsole() {
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>3 ISRIC SoilGrids scans</span>
+                  <span>3 Global Soil scans</span>
                 </li>
                 <li className="flex items-center gap-2 text-slate-400 line-through">
                   <span>No high-frequency satellite sweep</span>

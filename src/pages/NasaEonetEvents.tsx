@@ -40,7 +40,7 @@ export default function NasaEonetEvents({ onNavigate }: NasaEonetEventsProps) {
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || "Failed to retrieve NASA planetary events");
+        throw new Error(errData.error || "Failed to retrieve Planetary events");
       }
 
       const json = await response.json();
@@ -88,7 +88,7 @@ export default function NasaEonetEvents({ onNavigate }: NasaEonetEventsProps) {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
               <Globe className="w-7 h-7 text-indigo-600" />
-              NASA EONET Events
+              Global Planetary Events
             </h1>
             <p className="text-sm text-gray-500 mt-1">
               Active planetary climatic hazards and severe biosphere alerts.
@@ -101,7 +101,7 @@ export default function NasaEonetEvents({ onNavigate }: NasaEonetEventsProps) {
         <div className="h-96 flex flex-col items-center justify-center border border-gray-100 rounded-3xl bg-white shadow-sm">
           <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mb-4" />
           <p className="text-sm font-medium text-gray-500">
-            Connecting to NASA Earth Observatory data feeds...
+            Connecting to Global Earth Observatory data feeds...
           </p>
         </div>
       )}

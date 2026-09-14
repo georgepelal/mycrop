@@ -65,7 +65,7 @@ export default function OpenEpiForestFire() {
           <Flame className="w-6 h-6 text-brand-green" />
         </div>
         <div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">{t("sidebar.OpenEpiForestFire") || "OpenEPI Forest Fire Risk"}</h1>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight">{t("sidebar.OpenEpiForestFire") || "Forest Fire Risk"}</h1>
           <p className="text-sm font-medium text-slate-500">Live API Endpoint: /api/openepi-forest-fire</p>
         </div>
       </div>

@@ -6,9 +6,5 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   define: {
     'process.env.GOOGLE_MAPS_PLATFORM_KEY': JSON.stringify(process.env.GOOGLE_MAPS_PLATFORM_KEY || '')
-  },
-  server: {
-    host: '0.0.0.0',
-    port: 3000,
-  },
+  }
 });

@@ -91,10 +91,10 @@ export default function OpenEpiSoilQuality({ onNavigate }: OpenEpiSoilQualityPro
           <div>
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
               <Thermometer className="w-7 h-7 text-purple-600" />
-              OpenEPI Soil Quality
+              Global Soil Quality
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              ISRIC World Reference Base taxonomy and subsurface mechanical properties.
+              World Reference Base taxonomy and subsurface mechanical properties.
             </p>
           </div>
         </div>
@@ -114,7 +114,7 @@ export default function OpenEpiSoilQuality({ onNavigate }: OpenEpiSoilQualityPro
             Select a Location
           </h3>
           <p className="text-sm text-slate-500 max-w-md">
-            Query the OpenEPI geo-database for high-precision soil compositions, taxonomy mappings, and chemical properties.
+            Query the global geo-database for high-precision soil compositions, taxonomy mappings, and chemical properties.
           </p>
         </div>
       )}
@@ -123,7 +123,7 @@ export default function OpenEpiSoilQuality({ onNavigate }: OpenEpiSoilQualityPro
         <div className="h-96 flex flex-col items-center justify-center border border-gray-100 rounded-3xl bg-white shadow-sm">
           <Loader2 className="w-8 h-8 text-purple-500 animate-spin mb-4" />
           <p className="text-sm font-medium text-gray-500">
-            Querying ISRIC Soil Information vectors...
+            Querying Global Soil Information vectors...
           </p>
         </div>
       )}
@@ -147,7 +147,7 @@ export default function OpenEpiSoilQuality({ onNavigate }: OpenEpiSoilQualityPro
               </div>
               <div className="text-[10px] text-slate-500 mt-auto flex items-center gap-1">
                 <Mountain className="w-3.5 h-3.5 text-purple-500" />
-                ISRIC Soil Taxonomy Classification
+                Global Soil Taxonomy Classification
               </div>
             </div>
 

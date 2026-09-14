@@ -45,7 +45,7 @@ export default function CopernicusReflectance({ onNavigate }: CopernicusReflecta
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || "Failed to compile Copernicus Sentinel-2 surface reflectance vectors");
+        throw new Error(errData.error || "Failed to compile Satellite Sentinel-2 surface reflectance vectors");
       }
 
       const json = await response.json();
@@ -93,7 +93,7 @@ export default function CopernicusReflectance({ onNavigate }: CopernicusReflecta
           <div>
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
               <Satellite className="w-7 h-7 text-indigo-500" />
-              Copernicus Reflectance
+              Satellite Reflectance
             </h1>
             <p className="text-sm text-gray-500 mt-1">
               Sentinel-2 multispectral vegetation and soil optics indices.
@@ -116,7 +116,7 @@ export default function CopernicusReflectance({ onNavigate }: CopernicusReflecta
             Select a Location
           </h3>
           <p className="text-sm text-slate-500 max-w-md">
-            Query ESA Copernicus satellite optical bands for normalized difference vegetation and water indices.
+            Query ESA satellite satellite optical bands for normalized difference vegetation and water indices.
           </p>
         </div>
       )}

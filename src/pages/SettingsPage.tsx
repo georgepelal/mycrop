@@ -33,7 +33,7 @@ interface ApiCategory {
 }
 
 const INITIAL_CATEGORIES: ApiCategory[] = [
-  { id: "copernicus", name: "Copernicus Sentinel-2", category: "Space-Reflectance", description: "Vegetation index proxies, canopy density, and surface reflectance models.", status: true, token: "tok_cop_8f7b2a59e17f", lastRefreshed: "2026-06-20T06:12" },
+  { id: "copernicus", name: "Satellite Sentinel-2", category: "Space-Reflectance", description: "Vegetation index proxies, canopy density, and surface reflectance models.", status: true, token: "tok_cop_8f7b2a59e17f", lastRefreshed: "2026-06-20T06:12" },
   { id: "noaa", name: "NOAA Space Weather", category: "Space-Weather", description: "K-Index status alerts, solar flare flux thresholds, and magnetic storm monitors.", status: true, token: "tok_noaa_3e21ab9084d", lastRefreshed: "2026-06-20T06:12" },
   { id: "usgs", name: "USGS National Hydrology", category: "Hydrologic-Basins", description: "HUC-12 watershed divisions, drainage flow factors, and river runoffs.", status: true, token: "tok_usgs_9d8c63f112a", lastRefreshed: "2026-06-20T06:11" },
   { id: "openmeteo", name: "OpenMeteo Aero & PBL", category: "Boundary-Layer", description: "Planetary Boundary Layer height, thermodynamic wind vectors, and local altimeters.", status: true, token: "tok_om_1b2c4df558e2", lastRefreshed: "2026-06-20T06:10" },
@@ -457,7 +457,7 @@ export default function SettingsPage() {
                   <div className="space-y-0.5 max-w-md text-left">
                     <span className="text-xs font-bold text-gray-900 block font-sans">SLA Failure Instant Alarms</span>
                     <p className="text-[10px] text-gray-400 leading-normal font-sans">
-                      Dispatch Telegram webhooks to structural maintainers if primary Copernicus or USGS telemetry API returns exceed 3000ms response window heights.
+                      Dispatch Telegram webhooks to structural maintainers if primary Satellite or USGS telemetry API returns exceed 3000ms response window heights.
                     </p>
                   </div>
                   <button
@@ -489,10 +489,10 @@ export default function SettingsPage() {
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">Satellite API Linkages</span>
                     <div className="space-y-3 bg-slate-50 border border-slate-150 p-4 rounded-2xl">
                       
-                      {/* Copernicus Toggle */}
+                      {/* Satellite Toggle */}
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5 max-w-md text-left">
-                          <span className="text-xs font-bold text-gray-900 block font-sans">Copernicus Sentinel-2 Live Feed</span>
+                          <span className="text-xs font-bold text-gray-900 block font-sans">Satellite Sentinel-2 Live Feed</span>
                           <p className="text-[10px] text-gray-400 leading-normal font-sans">
                             Automatically sync multi-spectral spatial boundaries every 5 days when Sentinel satellites orbit your farmland coordinates.
                           </p>

@@ -1146,7 +1146,7 @@ export default function Field3DView({ parcels = [], initialSelectedParcelId }: F
                 {selectedParcel.ndvi > 0.7 ? "Excellent" : selectedParcel.ndvi > 0.5 ? "Moderate" : "Scarce"}
               </span>
               <span className="text-[9px] text-emerald-700/80 font-medium block leading-none pt-1">
-                Copernicus Feed Live
+                Satellite Feed Live
               </span>
             </div>
 
@@ -1905,7 +1905,7 @@ export default function Field3DView({ parcels = [], initialSelectedParcelId }: F
                   </div>
 
                   <p className="text-[10px] text-slate-500 leading-normal text-center pt-1.5 leading-relaxed font-sans">
-                    ⚡ Cards leverage Three.js frame interpolation and Copernicus Sentinel band scores to represent live geographic agriculture records on any device platform.
+                    ⚡ Cards leverage Three.js frame interpolation and Satellite Sentinel band scores to represent live geographic agriculture records on any device platform.
                   </p>
                 </div>
               </div>

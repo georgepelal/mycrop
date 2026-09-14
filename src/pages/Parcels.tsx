@@ -286,7 +286,7 @@ export default function Parcels({ parcels, onSelectParcel, onNavigateToForm, onN
                     <div className="flex items-center justify-between text-[10px]">
                       <span className="font-bold text-emerald-800 uppercase tracking-wide flex items-center gap-1 font-mono">
                         <Globe className="w-3 h-3 text-emerald-600 animate-pulse" />
-                        SoilGrids™ Active
+                        Global Soil Data Active
                       </span>
                       <span className="text-[8px] text-gray-400 font-mono font-bold">250m profile</span>
                     </div>
@@ -307,7 +307,7 @@ export default function Parcels({ parcels, onSelectParcel, onNavigateToForm, onN
                   </div>
                 ) : (
                   <div className="p-2.5 bg-slate-50 border border-slate-100/80 rounded-2xl text-left flex justify-between items-center">
-                    <span className="text-[10px] text-slate-400 font-medium">ISRIC Soil Profiles</span>
+                    <span className="text-[10px] text-slate-400 font-medium">Global Soil Profiles</span>
                     <span className="text-[9px] text-slate-400 font-mono border border-slate-200 bg-white px-2 py-0.5 rounded-lg font-bold">NOT QUERIED</span>
                   </div>
                 )}

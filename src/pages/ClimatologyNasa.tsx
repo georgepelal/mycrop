@@ -65,7 +65,7 @@ export default function ClimatologyNasa() {
           <Sun className="w-6 h-6 text-brand-green" />
         </div>
         <div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">{t("sidebar.ClimatologyNasa") || "NASA Climatology"}</h1>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight">{t("sidebar.ClimatologyNasa") || "Space Climatology"}</h1>
           <p className="text-sm font-medium text-slate-500">Live API Endpoint: /api/climatology-nasa</p>
         </div>
       </div>

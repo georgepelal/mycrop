@@ -208,7 +208,7 @@ export default function DiagnosticAnalytics({
     return found?.icon || CROP_PRESETS[cropType]?.icon || "🌾";
   };
 
-  // NASA POWER Climatology State Variables
+  // Climatology API State Variables
   const [nasaLoading, setNasaLoading] = useState(false);
   const [nasaError, setNasaError] = useState<string | null>(null);
   const [nasaData, setNasaData] = useState<{
@@ -409,12 +409,12 @@ export default function DiagnosticAnalytics({
         const res = await fetch(url);
         if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || "NASA POWER climatology satellite feed failure.");
+        throw new Error(errData.error || "Climatology satellite feed failure.");
       }
 
         const json = await res.json();
         if (!json.properties || !json.properties.parameter) {
-          throw new Error("No NASA satellite measurements mapped to these coordinates.");
+          throw new Error("No Satellite measurements mapped to these coordinates.");
         }
 
         if (!active) return;
@@ -429,7 +429,7 @@ export default function DiagnosticAnalytics({
 
         const dateKeys = Object.keys(gwettopObj).sort();
         if (dateKeys.length === 0) {
-          throw new Error("Empty daily point datasets streamed from NASA servers.");
+          throw new Error("Empty daily point datasets streamed from Climatology servers.");
         }
 
         let solarSum = 0;
@@ -516,9 +516,9 @@ export default function DiagnosticAnalytics({
         });
         setNasaLoading(false);
       } catch (err: any) {
-        console.warn("Dashboard NASA POWER Gateway Offline:", err);
+        console.warn("Dashboard Climatology Gateway Offline:", err);
         if (!active) return;
-        setNasaError("NASA POWER climatology satellite feed failure.");
+        setNasaError("Climatology satellite feed failure.");
         setNasaLoading(false);
       }
     };
@@ -640,12 +640,6 @@ export default function DiagnosticAnalytics({
                   {t("dashboard.selectedFocusField", "Selected Focus Field:")} <span className="text-brand-green">{activeParcel.name}</span>
                 </h3>
               </div>
-              <button 
-                onClick={() => onNavigate("predictor")}
-                className="text-xs font-bold text-brand-green hover:text-brand-green-hover flex items-center gap-1 group"
-              >
-                {t("dashboard.launchSatelliteAnalyzer", "Launch Satellite Analyzer")} <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-              </button>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
@@ -680,7 +674,7 @@ export default function DiagnosticAnalytics({
               <div className="mt-4 border-t border-gray-100 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-left">
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-[9px] uppercase font-bold font-mono tracking-wider">
-                    🌍 SoilGrids™ Active
+                    🌍 Soil Data Active
                   </span>
                   <p className="text-[10px] text-gray-500 font-sans font-medium">
                     Actual 250m grid database query mapped successfully.
@@ -987,10 +981,10 @@ export default function DiagnosticAnalytics({
 
                       {/* Six-Grid of parsed API matrices */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        {/* 1. Copernicus Reflectance */}
+                        {/* 1. Satellite Reflectance */}
                         <div className="bg-white border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
                           <div className="space-y-1">
-                            <span className="text-[8px] font-mono font-bold text-blue-600 uppercase">1. Copernicus S-2 Proxy</span>
+                            <span className="text-[8px] font-mono font-bold text-blue-600 uppercase">1. Satellite Proxy</span>
                             <span className="text-[11px] font-bold text-gray-800 block">Canopy Reflection Index</span>
                           </div>
                           <div className="mt-2 text-[10px] text-gray-600 font-mono space-y-0.5">
@@ -1094,7 +1088,7 @@ export default function DiagnosticAnalytics({
                   <Globe className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-[9px] font-bold text-indigo-600 uppercase tracking-widest block font-mono">NASA POWER Satellite Link</span>
+                  <span className="text-[9px] font-bold text-indigo-600 uppercase tracking-widest block font-mono">Climatology Satellite Link</span>
                   <h3 className="font-display font-black text-sm text-gray-900 uppercase">
                     30-Day Ag Climatology Integration
                   </h3>
@@ -1152,7 +1146,7 @@ export default function DiagnosticAnalytics({
               <div className="h-[280px] w-full flex flex-col justify-center items-center space-y-3 p-4 bg-rose-50/20 rounded-2xl border border-rose-100 text-center">
                 <ShieldAlert className="w-8 h-8 text-rose-500 animate-pulse" />
                 <div>
-                  <h4 className="text-xs font-bold text-gray-900">NASA Grid Connection Offline</h4>
+                  <h4 className="text-xs font-bold text-gray-900">Climatology Connection Offline</h4>
                   <p className="text-[11px] text-red-750 max-w-sm mx-auto leading-relaxed mt-1">{nasaError}</p>
                 </div>
               </div>
@@ -1324,7 +1318,7 @@ export default function DiagnosticAnalytics({
                       <button 
                         onClick={() => {
                           onSelectParcel(p.id);
-                          onNavigate("predictor");
+                          onNavigate("field-overview");
                         }}
                         className="text-[10px] font-bold text-red-600 hover:underline uppercase tracking-wider font-mono shrink-0 select-none cursor-pointer"
                       >
@@ -1473,7 +1467,7 @@ export default function DiagnosticAnalytics({
             </div>
             
             <button 
-              onClick={() => onNavigate("weather")}
+              onClick={() => onNavigate("field-weather")}
               className="w-full text-center text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 border border-blue-150 rounded-xl py-2 mt-4 cursor-pointer"
             >
               {t("dashboard.inspectCalendar", "Inspect 10-Day Irrigation Calendar")}
@@ -1635,7 +1629,7 @@ export default function DiagnosticAnalytics({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono text-brand-green bg-brand-green/10 px-2 py-0.5 rounded-md font-bold uppercase">
-                  OpenEpi Public API
+                  Environmental Data API
                 </span>
                 <span className="h-2 w-2 rounded-full bg-emerald-500" title="Active Feed Connect" />
               </div>
@@ -1655,7 +1649,7 @@ export default function DiagnosticAnalytics({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono text-brand-green bg-brand-green/10 px-2 py-0.5 rounded-md font-bold uppercase">
-                  NASA POWER Climatology
+                  Climatology API
                 </span>
                 <span className="h-2 w-2 rounded-full bg-emerald-500" title="Active Feed Connect" />
               </div>
@@ -1675,7 +1669,7 @@ export default function DiagnosticAnalytics({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono text-brand-green bg-brand-green/10 px-2 py-0.5 rounded-md font-bold uppercase">
-                  ISRIC SoilGrids 250m
+                  Global Soil Profiles 250m
                 </span>
                 <span className="h-2 w-2 rounded-full bg-emerald-500" title="Active Feed Connect" />
               </div>
@@ -1835,7 +1829,7 @@ export default function DiagnosticAnalytics({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-md font-bold uppercase">
-                  Copernicus Sentinel v2
+                  Satellite Imagery API
                 </span>
                 <span className="h-2 w-2 rounded-full bg-emerald-500" title="Active Feed Connect" />
               </div>

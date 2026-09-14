@@ -35,7 +35,7 @@ const resources = {
         "account.headerDesc": "Manage your agent profile, change authentication keys, verify coordinates, and configure security access modules.",
         "predictor.headerSubtitle": "Integrated Machine Learning Simulation Node",
         "predictor.headerTitle": "Astrometeorological & AI Crop Predictor",
-        "predictor.headerDesc": "Link satellite NDVI spectra, SoilGrids composition metrics, and dynamic mathematical photoperiod orbits via Gemini AI...",
+        "predictor.headerDesc": "Link satellite NDVI spectra, Global Soil Data composition metrics, and dynamic mathematical photoperiod orbits via Gemini AI...",
         "weather.headerSubtitle": "GIS Climate & Remote Meteorological Feed",
         "weather.headerTitle": "Micro-Climate Telemetry",
         "weather.liveStatus": "Real-time Satellite Feed Active",

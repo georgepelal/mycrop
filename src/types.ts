@@ -48,7 +48,7 @@ export interface Parcel {
   billingAmount: number;
   billingExpiration: string;
   
-  // Real SoilGrids ISRIC Global API records
+  // Real SoilGrids Global API records
   soilGridsClay?: number;
   soilGridsSand?: number;
   soilGridsSilt?: number;

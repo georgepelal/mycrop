@@ -64,7 +64,7 @@ export default function Dashboard({
         
         {/* Weather Card */}
         <button 
-          onClick={() => onNavigate("field-ensemble")}
+          onClick={() => onNavigate("field-weather")}
           className="bg-white border border-gray-200 hover:border-sky-300 rounded-3xl p-6 text-left group transition-all shadow-sm hover:shadow-md relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-sky-50 rounded-full blur-3xl -z-10 group-hover:bg-sky-100 transition-colors"></div>
@@ -156,30 +156,6 @@ export default function Dashboard({
             <div className="flex items-center gap-2">
               <MapIcon className="w-4 h-4 text-indigo-500" />
               <span className="text-sm font-bold text-gray-700">View Terrain</span>
-            </div>
-          </div>
-        </button>
-
-        {/* Ensemble Forecast Card */}
-        <button 
-          onClick={() => onNavigate("field-ensemble")}
-          className="bg-white border border-gray-200 hover:border-purple-300 rounded-3xl p-6 text-left group transition-all shadow-sm hover:shadow-md relative overflow-hidden"
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-50 rounded-full blur-3xl -z-10 group-hover:bg-purple-100 transition-colors"></div>
-          <div className="flex justify-between items-start mb-6">
-            <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center">
-              <Activity className="w-6 h-6" />
-            </div>
-            <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-purple-500 group-hover:translate-x-1 transition-all" />
-          </div>
-          <h3 className="text-2xl font-display font-bold text-gray-900 mb-2">Ensemble Weather Models</h3>
-          <p className="text-sm text-gray-500 mb-6">
-            Advanced meteorological variance charts showing model spread for temperature and precipitation.
-          </p>
-          <div className="flex gap-4 border-t border-gray-100 pt-4">
-            <div className="flex items-center gap-2">
-              <Info className="w-4 h-4 text-purple-500" />
-              <span className="text-sm font-bold text-gray-700">Scientific Model</span>
             </div>
           </div>
         </button>

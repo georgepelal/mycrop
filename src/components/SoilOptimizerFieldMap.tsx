@@ -1,15 +1,8 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { Parcel } from "../types";
-import { useSettings } from "../contexts/SettingsContext";
-import { 
+import {
   Layers, 
-  Droplets, 
-  Flame, 
-  Compass, 
-  Thermometer, 
-  Sparkles, 
-  ShieldAlert, 
-  Maximize2 
+  Compass 
 } from "lucide-react";
 
 interface SoilOptimizerFieldMapProps {
@@ -40,18 +33,14 @@ export default function SoilOptimizerFieldMap({ parcel }: SoilOptimizerFieldMapP
   const [activeLayer, setActiveLayer] = useState<MapLayerType>("nitrogen");
   const [selectedProbe, setSelectedProbe] = useState<ProbePoint | null>(null);
 
-  const { theme } = useSettings();
-  const isDarkMode = theme === "dark";
-
   const lat = parcel?.latitude || parcel?.lat || 35.0;
   const lng = parcel?.longitude || parcel?.lng || 35.0;
-  const boundaries = parcel?.boundaries || [];
+  const boundaries = useMemo(() => parcel?.boundaries || [], [parcel?.boundaries]);
 
-  // Generate 3 core subsoil sensors placed strategically within or near the field boundary
+  // Show the field's own registered soil data at up to 3 points around the boundary
+  // for spatial context. This is NOT 3 independent measurements -- there is only one
+  // real reading per field -- so every marker intentionally shows the same values.
   const probes = useMemo<ProbePoint[]>(() => {
-    // Generate pseudo-random offsets based on parcel's name/ID length to keep them consistent
-    const seed = (parcel?.id || "default").length;
-
     // Default fallback offsets if no boundaries
     let offsetA = { lat: 0.0003, lng: -0.0002 };
     let offsetB = { lat: 0, lng: 0 };
@@ -86,37 +75,17 @@ export default function SoilOptimizerFieldMap({ parcel }: SoilOptimizerFieldMapP
       };
     }
 
+    const registeredReading = {
+      moisture: parcel?.soilMoisture !== undefined ? `${parcel.soilMoisture}%` : "Not available",
+      nitrogen: parcel?.nitrogen || "Not available",
+      ph: parcel?.soilPH ?? 0,
+      organic: "Not available"
+    };
+
     return [
-      {
-        id: "probe-core-a",
-        name: "Soil Sample Location A",
-        offsetLat: offsetA.lat,
-        offsetLng: offsetA.lng,
-        moisture: "34.2% (Optimal)",
-        nitrogen: "78 mg/kg (High)",
-        ph: parseFloat((6.4 + (seed % 5) * 0.1).toFixed(1)),
-        organic: "3.2% (Rich)"
-      },
-      {
-        id: "probe-core-b",
-        name: "Soil Sample Location B",
-        offsetLat: offsetB.lat,
-        offsetLng: offsetB.lng,
-        moisture: "28.5% (Marginal)",
-        nitrogen: "46 mg/kg (Medium)",
-        ph: parseFloat((5.8 + (seed % 3) * 0.2).toFixed(1)),
-        organic: "1.9% (Moderate)"
-      },
-      {
-        id: "probe-core-c",
-        name: "Soil Sample Location C",
-        offsetLat: offsetC.lat,
-        offsetLng: offsetC.lng,
-        moisture: "19.1% (Low / Leached)",
-        nitrogen: "22 mg/kg (Deficient)",
-        ph: parseFloat((7.1 - (seed % 4) * 0.1).toFixed(1)),
-        organic: "0.8% (Depleted)"
-      }
+      { id: "probe-core-a", name: "Soil Sample Location A", offsetLat: offsetA.lat, offsetLng: offsetA.lng, ...registeredReading },
+      { id: "probe-core-b", name: "Soil Sample Location B", offsetLat: offsetB.lat, offsetLng: offsetB.lng, ...registeredReading },
+      { id: "probe-core-c", name: "Soil Sample Location C", offsetLat: offsetC.lat, offsetLng: offsetC.lng, ...registeredReading }
     ];
   }, [parcel, boundaries, lat, lng]);
 
@@ -225,8 +194,6 @@ export default function SoilOptimizerFieldMap({ parcel }: SoilOptimizerFieldMapP
       }
 
       // Draw 3 nested zones representing different concentration areas
-      const centerPoint = [lat, lng];
-
       // Sector 1: Core Zone
       const zoneACoords = boundaries.slice(0, Math.ceil(boundaries.length / 2)).map(b => [
         (b.lat + lat) / 2,
@@ -278,7 +245,7 @@ export default function SoilOptimizerFieldMap({ parcel }: SoilOptimizerFieldMapP
       polygonLayersRef.current.push(circle2);
     }
 
-    // Add sensor probe pins
+    // Add soil sample location pins
     probeMarkersRef.current.forEach(marker => marker.remove());
     probeMarkersRef.current = [];
 
@@ -425,7 +392,7 @@ export default function SoilOptimizerFieldMap({ parcel }: SoilOptimizerFieldMapP
         </div>
       </div>
 
-      {/* Selected Sensor Core Information Drawer */}
+      {/* Selected Soil Sample Information */}
       {selectedProbe && (
         <div className="bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-500/10 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in">
           <div className="flex items-start gap-3">
@@ -435,18 +402,18 @@ export default function SoilOptimizerFieldMap({ parcel }: SoilOptimizerFieldMapP
             <div>
               <span className="text-[9px] uppercase tracking-wider font-bold text-slate-400">Selected Soil Sample Point</span>
               <h4 className="text-sm font-black text-slate-800 dark:text-slate-100">{selectedProbe.name}</h4>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400">Diagnostic measurements for this sample location.</p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400">This field's registered soil reading, shown here for spatial reference.</p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 p-3 rounded-xl">
             <div className="text-center md:text-left">
               <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wide block">Moisture</span>
-              <span className="text-xs font-bold text-sky-600">{selectedProbe.moisture.split(" ")[0]}</span>
+              <span className="text-xs font-bold text-sky-600">{selectedProbe.moisture}</span>
             </div>
             <div className="text-center md:text-left">
               <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wide block">Nitrogen</span>
-              <span className="text-xs font-bold text-emerald-600">{selectedProbe.nitrogen.split(" ")[0]} {selectedProbe.nitrogen.split(" ")[1]}</span>
+              <span className="text-xs font-bold text-emerald-600">{selectedProbe.nitrogen}</span>
             </div>
             <div className="text-center md:text-left">
               <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wide block">Sub-Soil pH</span>
@@ -454,7 +421,7 @@ export default function SoilOptimizerFieldMap({ parcel }: SoilOptimizerFieldMapP
             </div>
             <div className="text-center md:text-left">
               <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wide block">Organic Matter</span>
-              <span className="text-xs font-bold text-yellow-700">{selectedProbe.organic.split(" ")[0]}</span>
+              <span className="text-xs font-bold text-yellow-700">{selectedProbe.organic}</span>
             </div>
           </div>
         </div>

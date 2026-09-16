@@ -1,6 +1,6 @@
 import { EarthIslandVisualizer } from "../components/EarthIslandVisualizer";
-import React, { useEffect, useState } from "react";
-import { Layers, Activity, MapPin, Loader2, Info, Leaf, CloudRain, Droplets, ArrowLeft } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Layers, Activity, MapPin, Loader2, Info, Leaf, CloudRain, ArrowLeft } from "lucide-react";
 import { Parcel } from "../types";
 
 interface SoilCarbonData {
@@ -27,7 +27,10 @@ const getSocBlockColor = (soc: number) => {
 
 export default function SoilOrganicCarbon({ parcels, activeParcelId, onSelectParcel, onNavigate }: SoilOrganicCarbonProps) {
   const activeParcel = parcels?.find(p => p.id === activeParcelId) || parcels?.[0];
-  const coords = activeParcel ? { lat: activeParcel.lat || activeParcel.latitude, lng: activeParcel.lng || activeParcel.longitude } : null;
+  const coords = useMemo(
+    () => activeParcel ? { lat: activeParcel.lat || activeParcel.latitude, lng: activeParcel.lng || activeParcel.longitude } : null,
+    [activeParcel]
+  );
 
   const [data, setData] = useState<SoilCarbonData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -42,47 +45,32 @@ export default function SoilOrganicCarbon({ parcels, activeParcelId, onSelectPar
 
       setLoading(true);
       setError(null);
-
-      // Fallback mock data in case API is down or times out
-      const MOCK_DATA: SoilCarbonData = {
-        soc: { "0-5cm": 45.2, "5-15cm": 38.5, "15-30cm": 25.4, "30-60cm": 15.2, "60-100cm": 8.5, "100-200cm": 4.1 },
-        nitrogen: { "0-5cm": 3.8, "5-15cm": 3.2, "15-30cm": 2.1, "30-60cm": 1.2, "60-100cm": 0.8, "100-200cm": 0.4 },
-        ocd: { "0-5cm": 4.2, "5-15cm": 4.5, "15-30cm": 4.8, "30-60cm": 5.1, "60-100cm": 5.4, "100-200cm": 5.5 }
-      };
+      setData(null);
 
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
 
         const url = `https://rest.isric.org/soilgrids/v2.0/properties/query?lon=${fetchLng}&lat=${fetchLat}&property=soc&property=nitrogen&property=ocd&depth=0-5cm&depth=5-15cm&depth=15-30cm&depth=30-60cm&depth=60-100cm&depth=100-200cm&value=mean`;
-        
+
         let response;
         try {
           response = await fetch(url, { signal: controller.signal });
           clearTimeout(timeoutId);
         } catch (fetchErr: any) {
           clearTimeout(timeoutId);
-          console.warn("ISRIC API error or timeout, using fallback:", fetchErr);
-          setData(MOCK_DATA);
-          setLoading(false);
-          return;
+          throw new Error("Timed out contacting the ISRIC SoilGrids API.", { cause: fetchErr });
         }
-        
+
         if (!response.ok) {
-          console.warn(`ISRIC API returned ${response.status}, using fallback`);
-          setData(MOCK_DATA);
-          setLoading(false);
-          return;
+          throw new Error(`ISRIC SoilGrids API returned an error (status ${response.status}).`);
         }
-        
+
         const result = await response.json();
-        
+
         const properties = result?.properties?.layers;
         if (!properties || !Array.isArray(properties)) {
-          console.warn("ISRIC API returned invalid shape, using fallback");
-          setData(MOCK_DATA);
-          setLoading(false);
-          return;
+          throw new Error("ISRIC SoilGrids API returned an unexpected response shape.");
         }
 
         const parsedData: SoilCarbonData = {
@@ -106,26 +94,23 @@ export default function SoilOrganicCarbon({ parcels, activeParcelId, onSelectPar
             });
           }
         });
-        
+
         const hasValidSoc = Object.values(parsedData.soc).some(v => v !== null);
         if (!hasValidSoc) {
-           console.warn("No valid SOC data returned for coordinates, using fallback");
-           setData(MOCK_DATA);
-           setLoading(false);
-           return;
+          throw new Error("No soil organic carbon data available for this location (e.g. urbanized area or outside coverage).");
         }
 
         setData(parsedData);
       } catch (err: any) {
-        console.warn("Unexpected error processing soil data, using fallback", err);
-        setData(MOCK_DATA);
+        console.warn("Failed to load soil organic carbon data:", err);
+        setError(err.message || "An unexpected error occurred");
       } finally {
         setLoading(false);
       }
     }
     
     fetchData();
-  }, [coords?.lat, coords?.lng]);
+  }, [coords]);
 
   if (!activeParcel) {
     return (

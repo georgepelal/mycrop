@@ -1,27 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useSettings } from "../contexts/SettingsContext";
+import { useSettings } from "../contexts/useSettings";
 import { 
   Sprout, 
-  TrendingUp, 
-  DollarSign, 
   Calendar, 
   MapPin, 
   Gauge, 
   ShieldAlert, 
   CheckCircle, 
-  Compass, 
   Layers, 
   Activity, 
   Sun, 
   CloudRain,
-  ArrowRight,
   Database,
   Globe,
   Loader2,
-  Droplets,
   Flame,
-  LineChart as LineIcon,
   Trash2
 } from "lucide-react";
 import { Parcel, CROP_PRESETS, Crop, DiagnosticLog } from "../types";
@@ -33,8 +27,7 @@ import {
   XAxis, 
   YAxis, 
   Tooltip, 
-  CartesianGrid,
-  Legend
+  CartesianGrid
 } from "recharts";
 
 interface DiagnosticAnalyticsProps {
@@ -44,6 +37,58 @@ interface DiagnosticAnalyticsProps {
   onNavigate: (page: string) => void;
 }
 
+// Mathematical Sunrise/Sunset & Photoperiod calculation based on astronomical coordinate geometry
+function calculateDaylightHours(latitude: number, longitude: number | undefined) {
+  // Current date is approx June 17, 2026. Day of year is around 168.
+  const today = new Date();
+  const startOfYear = new Date(today.getFullYear(), 0, 0);
+  const diff = today.getTime() - startOfYear.getTime();
+  const oneDay = 1000 * 60 * 60 * 24;
+  const dayOfYear = Math.floor(diff / oneDay);
+
+  // Math: Declination of solar rays:
+  const declination = 23.45 * Math.sin((360 / 365) * (dayOfYear - 80) * (Math.PI / 180));
+
+  // Convert to radians for JavaScript Math functions
+  const latRad = latitude * (Math.PI / 180);
+  const decRad = declination * (Math.PI / 180);
+
+  // Hour angle formula: cos(omega_s) = -tan(lat) * tan(dec)
+  const cosHourAngle = -Math.tan(latRad) * Math.tan(decRad);
+
+  let hours: number;
+  if (cosHourAngle <= -1) {
+    hours = 24.0; // Polar Day
+  } else if (cosHourAngle >= 1) {
+    hours = 0.0; // Polar Night
+  } else {
+    const hourAngleRad = Math.acos(cosHourAngle);
+    const hourAngleDeg = hourAngleRad * (180 / Math.PI);
+    hours = (2 * hourAngleDeg) / 15;
+  }
+
+  // Rough rise/set estimate based on standard local solar noon (12:00 + local adjustments)
+  const meridianShift = (longitude ?? -87) / 15;
+  const utcNoon = 12 - meridianShift;
+  const halfDay = hours / 2;
+
+  const formatTimeOffset = (decHours: number) => {
+    let h = Math.floor(decHours);
+    const m = Math.floor((decHours - h) * 60);
+    // Map to 24-hr layout securely
+    h = (h + 24) % 24;
+    const ampm = h >= 12 ? "PM" : "AM";
+    const displayHour = h % 12 === 0 ? 12 : h % 12;
+    return `${displayHour}:${String(m).padStart(2, '0')} ${ampm}`;
+  };
+
+  return {
+    hours: Number(hours.toFixed(1)),
+    sunrise: formatTimeOffset(utcNoon - halfDay),
+    sunset: formatTimeOffset(utcNoon + halfDay)
+  };
+}
+
 export default function DiagnosticAnalytics({ 
   parcels, 
   activeParcelId, 
@@ -51,7 +96,7 @@ export default function DiagnosticAnalytics({
   onNavigate 
 }: DiagnosticAnalyticsProps) {
   const { t } = useTranslation();
-  const { tempUnit, rainUnit, formatArea, formatYield, convertRain, convertTemp: getConvertedTemp } = useSettings();
+  const { tempUnit, rainUnit, convertRain } = useSettings();
 
   const convertTemp = (celsius: number) => {
     if (tempUnit === "F") {
@@ -79,7 +124,8 @@ export default function DiagnosticAnalytics({
   const [scanLoading, setScanLoading] = useState(false);
   const [activeDiagnosticId, setActiveDiagnosticId] = useState<string | null>(null);
 
-  // Load diagnostics for the active parcel from Firestore
+  // Load diagnostics for the active parcel from Firestore. Keyed on the field's
+  // identity only, so an unrelated re-render of the same field doesn't re-query.
   useEffect(() => {
     if (!activeParcel || !activeParcel.id) return;
     getDiagnosticsForParcel(activeParcel.id)
@@ -92,6 +138,7 @@ export default function DiagnosticAnalytics({
         }
       })
       .catch((err) => console.warn("Failed to retrieve diagnostic log history:", err));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeParcel?.id]);
 
   const handlePerformAstroDiagnosticScan = async () => {
@@ -152,7 +199,7 @@ export default function DiagnosticAnalytics({
       const pblHeight = boundary?.aerodynamics?.boundaryLayerHeightMeters ?? 820;
       const caloriesVal = macronutrients?.nutrientsPer100g?.calories ?? 65;
 
-      const summaryStr = `Astro-Ecological Multi-API scan completed at ${elevationM}m altitude in the ${watershedName} drainage basin (HUC: ${hucUnit}). Boundary convective layer height is at ${pblHeight}m with thermal state: ${boundary?.aerodynamics?.thermalTurbulenceState || "Stable"}. Sentinel-2 surface proxy reports canopy reflecting index at ${ndviVal} NDVI, and canopy wetness at ${ndwiVal} NDWI. Regional forest coverage register reports ${forestRatio}% in ${countryMap}. Harvest standard crop nutritive catalog defines edible-weight content at ${caloriesVal} kcal/100g.`;
+      const summaryStr = `Astro-Ecological Multi-API scan completed at ${elevationM}m altitude in the ${watershedName} drainage basin (HUC: ${hucUnit}). Boundary convective layer height is at ${pblHeight}m with thermal state: ${boundary?.aerodynamics?.thermalTurbulenceState || "Stable"}. Estimated canopy reflectance index at ${ndviVal} NDVI, and canopy wetness at ${ndwiVal} NDWI (location-based estimate, not live satellite imagery). Regional forest coverage register reports ${forestRatio}% in ${countryMap}. Harvest standard crop nutritive catalog defines edible-weight content at ${caloriesVal} kcal/100g.`;
 
       const ratingStatus = ndviVal > 0.65 && slopeDeg < 11 ? "optimal" : slopeDeg > 9 ? "warning" : "info";
 
@@ -170,7 +217,7 @@ export default function DiagnosticAnalytics({
         parcelId: activeParcel.id,
         timestamp: new Date().toISOString(),
         category: "Eco-Astro Precision Scan",
-        apiSource: "Copernicus S-2, USGS Rivers, WorldBank, OpenMeteo PBL, FAO",
+        apiSource: "Reflectance Estimate, USGS Rivers, WorldBank, OpenMeteo PBL, FAO",
         metricsJSONString: JSON.stringify(compiledMetrics),
         summary: summaryStr,
         status: ratingStatus
@@ -238,58 +285,6 @@ export default function DiagnosticAnalytics({
     sunsetTime: string;
   } | null>(null);
 
-  // Mathematical Sunrise/Sunset & Photoperiod calculation based on astronomical coordinate geometry
-  const calculateDaylightHours = (latitude: number) => {
-    // Current date is approx June 17, 2026. Day of year is around 168.
-    const today = new Date();
-    const startOfYear = new Date(today.getFullYear(), 0, 0);
-    const diff = today.getTime() - startOfYear.getTime();
-    const oneDay = 1000 * 60 * 60 * 24;
-    const dayOfYear = Math.floor(diff / oneDay);
-
-    // Math: Declination of solar rays:
-    const declination = 23.45 * Math.sin((360 / 365) * (dayOfYear - 80) * (Math.PI / 180));
-    
-    // Convert to radians for JavaScript Math functions
-    const latRad = latitude * (Math.PI / 180);
-    const decRad = declination * (Math.PI / 180);
-    
-    // Hour angle formula: cos(omega_s) = -tan(lat) * tan(dec)
-    const cosHourAngle = -Math.tan(latRad) * Math.tan(decRad);
-    
-    let hours = 12.0;
-    if (cosHourAngle <= -1) {
-      hours = 24.0; // Polar Day
-    } else if (cosHourAngle >= 1) {
-      hours = 0.0; // Polar Night
-    } else {
-      const hourAngleRad = Math.acos(cosHourAngle);
-      const hourAngleDeg = hourAngleRad * (180 / Math.PI);
-      hours = (2 * hourAngleDeg) / 15;
-    }
-
-    // Rough rise/set estimate based on standard local solar noon (12:00 + local adjustments)
-    const meridianShift = (activeParcel.lng ?? activeParcel.longitude ?? -87) / 15;
-    const utcNoon = 12 - meridianShift;
-    const halfDay = hours / 2;
-    
-    const formatTimeOffset = (decHours: number) => {
-      let h = Math.floor(decHours);
-      let m = Math.floor((decHours - h) * 60);
-      // Map to 24-hr layout securely
-      h = (h + 24) % 24;
-      const ampm = h >= 12 ? "PM" : "AM";
-      const displayHour = h % 12 === 0 ? 12 : h % 12;
-      return `${displayHour}:${String(m).padStart(2, '0')} ${ampm}`;
-    };
-
-    return {
-      hours: Number(hours.toFixed(1)),
-      sunrise: formatTimeOffset(utcNoon - halfDay),
-      sunset: formatTimeOffset(utcNoon + halfDay)
-    };
-  };
-
   // Fetch Open-Meteo depth-stratified subsoil parameters
   useEffect(() => {
     if (!activeParcel) return;
@@ -299,45 +294,45 @@ export default function DiagnosticAnalytics({
 
     let active = true;
     setSoilLoading(true);
+    setSoilError(null);
 
     const fetchSoilParameters = async () => {
       try {
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=soil_temperature_0_to_7cm,soil_temperature_7_to_28cm,soil_temperature_28_to_100cm,soil_moisture_0_to_7cm,soil_moisture_7_to_28cm,soil_moisture_28_to_100cm&timezone=auto`;
         const res = await fetch(url);
-        
-        let surfaceTemp = 20.8;
-        let midTemp = 18.5;
-        let deepTemp = 16.2;
-        let surfaceMoist = 0.38;
-        let midMoist = 0.44;
-        let deepMoist = 0.49;
+        if (!res.ok) {
+          throw new Error("Open-Meteo Soil Profile endpoint returned an error.");
+        }
 
-        if (res.ok) {
-          const json = await res.json();
-          if (json.hourly && json.hourly.soil_moisture_0_to_7cm) {
-            // Take the current hour indices
-            const currentHourIdx = new Date().getHours();
-            
-            const sTempList = json.hourly.soil_temperature_0_to_7cm ?? [];
-            const mTempList = json.hourly.soil_temperature_7_to_28cm ?? [];
-            const dTempList = json.hourly.soil_temperature_28_to_100cm ?? [];
-            const sMoistList = json.hourly.soil_moisture_0_to_7cm ?? [];
-            const mMoistList = json.hourly.soil_moisture_7_to_28cm ?? [];
-            const dMoistList = json.hourly.soil_moisture_28_to_100cm ?? [];
+        const json = await res.json();
+        if (!json.hourly || !json.hourly.soil_moisture_0_to_7cm) {
+          throw new Error("No sub-surface soil data available for this location.");
+        }
 
-            surfaceTemp = sTempList[currentHourIdx] ?? 21.2;
-            midTemp = mTempList[currentHourIdx] ?? 19.1;
-            deepTemp = dTempList[currentHourIdx] ?? 16.8;
+        // Take the current hour indices
+        const currentHourIdx = new Date().getHours();
 
-            surfaceMoist = sMoistList[currentHourIdx] ?? (activeParcel.soilMoisture / 100);
-            midMoist = mMoistList[currentHourIdx] ?? (activeParcel.soilMoisture / 90);
-            deepMoist = dMoistList[currentHourIdx] ?? (activeParcel.soilMoisture / 80);
-          }
+        const sTempList = json.hourly.soil_temperature_0_to_7cm ?? [];
+        const mTempList = json.hourly.soil_temperature_7_to_28cm ?? [];
+        const dTempList = json.hourly.soil_temperature_28_to_100cm ?? [];
+        const sMoistList = json.hourly.soil_moisture_0_to_7cm ?? [];
+        const mMoistList = json.hourly.soil_moisture_7_to_28cm ?? [];
+        const dMoistList = json.hourly.soil_moisture_28_to_100cm ?? [];
+
+        const surfaceTemp = sTempList[currentHourIdx];
+        const midTemp = mTempList[currentHourIdx];
+        const deepTemp = dTempList[currentHourIdx];
+        const surfaceMoist = sMoistList[currentHourIdx];
+        const midMoist = mMoistList[currentHourIdx];
+        const deepMoist = dMoistList[currentHourIdx];
+
+        if ([surfaceTemp, midTemp, deepTemp, surfaceMoist, midMoist, deepMoist].some((v) => v === undefined || v === null)) {
+          throw new Error("Sub-surface soil data was incomplete for the current hour.");
         }
 
         if (!active) return;
 
-        const daylight = calculateDaylightHours(lat);
+        const daylight = calculateDaylightHours(lat, lng);
 
         setSoilData({
           tempSurface: Number(surfaceTemp.toFixed(1)),
@@ -351,10 +346,11 @@ export default function DiagnosticAnalytics({
           sunsetTime: daylight.sunset,
         });
         setSoilLoading(false);
-      } catch (err) {
+      } catch (err: any) {
         console.warn("Open-Meteo Soil Profile Gateway failure:", err);
         if (!active) return;
-        setSoilError("Open-Meteo Soil Profile endpoint failure.");
+        setSoilData(null);
+        setSoilError(err.message || "Open-Meteo Soil Profile endpoint failure.");
         setSoilLoading(false);
       }
     };
@@ -848,7 +844,9 @@ export default function DiagnosticAnalytics({
               </div>
             ) : (
               <div className="h-[120px] w-full flex items-center justify-center text-center">
-                <p className="text-xs text-slate-400">Unable to retrieve coordinate details. Draw active bounds first.</p>
+                <p className="text-xs text-slate-400">
+                  {soilError || "Unable to retrieve coordinate details. Draw active bounds first."}
+                </p>
               </div>
             )}
           </div>
@@ -945,10 +943,10 @@ export default function DiagnosticAnalytics({
                   const selectedLog = diagnostics.find(d => d.id === activeDiagnosticId);
                   if (!selectedLog) return null;
 
-                  let parsedData: any = {};
+                  let parsedData: any;
                   try {
                     parsedData = JSON.parse(selectedLog.metricsJSONString || "{}");
-                  } catch (e) {
+                  } catch {
                     parsedData = {};
                   }
 
@@ -1423,52 +1421,23 @@ export default function DiagnosticAnalytics({
             </div>
           </div>
 
-          {/* Meteorological & Micro-Sensor feed */}
-          <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm overflow-hidden relative">
-            <h3 className="font-display font-semibold text-base text-gray-900 mb-4 flex items-center gap-2">
-              <Sun className="w-5 h-5 text-yellow-500" />
-              {t("dashboard.regionalWeather", "Dynamic Regional Weather")}
-            </h3>
-
-            <div className="space-y-4">
-              {/* Primary Location */}
-              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                <div>
-                  <h4 className="text-xs font-extrabold text-gray-900">Corn Belt Region (Zone B)</h4>
-                  <p className="text-[10px] text-gray-400 font-medium">{t("dashboard.precipChance", "Precipitation Chance:")} 12%</p>
-                </div>
-                <div className="text-right flex items-center gap-2.5">
-                  <Sun className="w-5 h-5 text-yellow-500 animate-spin-slow" />
-                  <div>
-                    <span className="text-base font-extrabold font-display block text-gray-900">
-                      {tempUnit === "F" ? "78°F" : "25.6°C"}
-                    </span>
-                    <span className="text-[9px] font-bold text-emerald-600 block bg-emerald-50 px-1 rounded">Optimal</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Secondary Location */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-xs font-extrabold text-gray-900">Valley Soybean Slopes</h4>
-                  <p className="text-[10px] text-gray-400 font-medium font-sans">{t("dashboard.precipChance", "Precipitation Chance:")} 65%</p>
-                </div>
-                <div className="text-right flex items-center gap-2.5">
-                  <CloudRain className="w-5 h-5 text-blue-500" />
-                  <div>
-                    <span className="text-base font-extrabold font-display block text-gray-900">
-                      {tempUnit === "F" ? "66°F" : "18.9°C"}
-                    </span>
-                    <span className="text-[9px] font-bold text-blue-600 block bg-blue-50 px-1 rounded">Showers</span>
-                  </div>
-                </div>
-              </div>
+          {/* Weather CTA -- points to the real forecast rather than showing invented preview numbers */}
+          <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm overflow-hidden relative flex flex-col items-center justify-center text-center gap-3">
+            <div className="p-3 bg-yellow-50 text-yellow-600 rounded-2xl border border-yellow-100">
+              <Sun className="w-6 h-6" />
             </div>
-            
-            <button 
+            <div>
+              <h3 className="font-display font-semibold text-base text-gray-900">
+                {t("dashboard.regionalWeather", "Field Weather")}
+              </h3>
+              <p className="text-xs text-gray-400 mt-1">
+                {t("dashboard.regionalWeatherDesc", "Open the live 10-day forecast for this field's coordinates.")}
+              </p>
+            </div>
+
+            <button
               onClick={() => onNavigate("field-weather")}
-              className="w-full text-center text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 border border-blue-150 rounded-xl py-2 mt-4 cursor-pointer"
+              className="w-full text-center text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 border border-blue-150 rounded-xl py-2 mt-1 cursor-pointer"
             >
               {t("dashboard.inspectCalendar", "Inspect 10-Day Irrigation Calendar")}
             </button>
@@ -1492,7 +1461,7 @@ export default function DiagnosticAnalytics({
                   <div className="text-xs">
                     <span className="text-[10px] font-mono text-gray-400 font-bold block">JUNE 15</span>
                     <strong className="text-gray-900 block font-semibold mt-0.5">{t("dashboard.samplingProtocol", "Leaf Hydration Stress Sampling")}</strong>
-                    <p className="text-[11px] text-gray-500 mt-0.5">{t("dashboard.samplingDesc", "Sentinel-2 remote sensing multispectral scan across wheat-bearing margins.")}</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">{t("dashboard.samplingDesc", "Location-based canopy reflectance estimate across wheat-bearing margins.")}</p>
                   </div>
                 </div>
 
@@ -1515,8 +1484,8 @@ export default function DiagnosticAnalytics({
                   </span>
                   <div className="text-xs">
                     <span className="text-[10px] font-mono text-gray-400 font-bold block">JULY 02</span>
-                    <strong className="text-gray-900 block font-semibold mt-0.5">Sentinel-2 Ortho-Reflectance Scan</strong>
-                    <p className="text-[11px] text-gray-500 mt-0.5">Sentinel orbital transit capturing high accuracy red/NIR bands.</p>
+                    <strong className="text-gray-900 block font-semibold mt-0.5">Reflectance Estimate Refresh</strong>
+                    <p className="text-[11px] text-gray-500 mt-0.5">Recompute the location-based canopy reflectance estimate.</p>
                   </div>
                 </div>
 
@@ -1556,49 +1525,6 @@ export default function DiagnosticAnalytics({
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => {
-                const button = document.getElementById("pulse-btn");
-                if (button) {
-                  button.classList.add("animate-spin");
-                  button.innerText = "⚡ Pulsing...";
-                  setTimeout(() => {
-                    button.classList.remove("animate-spin");
-                    button.innerText = "🔄 Dynamic Pulse Run";
-                    alert("All 16 agricultural telemetry endpoints pulsed successfully with green light status!");
-                  }, 1200);
-                }
-              }}
-              id="pulse-btn"
-              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 hover:text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
-            >
-              🔄 Dynamic Pulse Run
-            </button>
-
-            <button
-              onClick={() => {
-                const badge = document.getElementById("sync-complete-badge");
-                if (badge) {
-                  badge.style.display = "inline-flex";
-                  setTimeout(() => {
-                    badge.style.display = "none";
-                  }, 3000);
-                }
-              }}
-              className="px-4 py-2.5 bg-brand-green hover:bg-emerald-600 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-sm shadow-emerald-500/10"
-            >
-              Sync Satellite Ephemeris
-            </button>
-            
-            <span 
-              id="sync-complete-badge" 
-              style={{ display: "none" }} 
-              className="text-[9.5px] font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-2 rounded-xl uppercase font-bold animate-pulse"
-            >
-              ✅ Orbit parameters aligned!
-            </span>
-          </div>
         </div>
 
         {/* 16 APIs Integrated Grid */}
@@ -1611,7 +1537,7 @@ export default function DiagnosticAnalytics({
                 <span className="text-[10px] font-mono text-brand-green bg-brand-green/10 px-2 py-0.5 rounded-md font-bold uppercase">
                   Open-Meteo API
                 </span>
-                <span className="h-2 w-2 rounded-full bg-emerald-500 group-hover:animate-ping" title="Active Feed Connect" />
+                <span className="h-2 w-2 rounded-full bg-slate-600" title="Publicly documented endpoint (not live-monitored)" />
               </div>
               <h4 className="text-xs font-bold text-slate-200">Atmosphere & Deep Subsoil Temp</h4>
               <p className="text-[11px] text-slate-400 leading-normal">
@@ -1619,7 +1545,7 @@ export default function DiagnosticAnalytics({
               </p>
             </div>
             <div className="flex items-center justify-between border-t border-slate-900 mt-3 pt-2 text-[9.5px] font-mono text-slate-500">
-              <span>LATENCY: 142ms</span>
+              <span>REST API</span>
               <span>NO KEY NEEDED</span>
             </div>
           </div>
@@ -1631,7 +1557,7 @@ export default function DiagnosticAnalytics({
                 <span className="text-[10px] font-mono text-brand-green bg-brand-green/10 px-2 py-0.5 rounded-md font-bold uppercase">
                   Environmental Data API
                 </span>
-                <span className="h-2 w-2 rounded-full bg-emerald-500" title="Active Feed Connect" />
+                <span className="h-2 w-2 rounded-full bg-slate-600" title="Publicly documented endpoint (not live-monitored)" />
               </div>
               <h4 className="text-xs font-bold text-slate-200">Global Soil Profile Metrics</h4>
               <p className="text-[11px] text-slate-400 leading-normal">
@@ -1639,7 +1565,7 @@ export default function DiagnosticAnalytics({
               </p>
             </div>
             <div className="flex items-center justify-between border-t border-slate-900 mt-3 pt-2 text-[9.5px] font-mono text-slate-500">
-              <span>LATENCY: 195ms</span>
+              <span>REST API</span>
               <span>KEYLESS API</span>
             </div>
           </div>
@@ -1651,7 +1577,7 @@ export default function DiagnosticAnalytics({
                 <span className="text-[10px] font-mono text-brand-green bg-brand-green/10 px-2 py-0.5 rounded-md font-bold uppercase">
                   Climatology API
                 </span>
-                <span className="h-2 w-2 rounded-full bg-emerald-500" title="Active Feed Connect" />
+                <span className="h-2 w-2 rounded-full bg-slate-600" title="Publicly documented endpoint (not live-monitored)" />
               </div>
               <h4 className="text-xs font-bold text-slate-200">Solar & Transpiration Radiation</h4>
               <p className="text-[11px] text-slate-400 leading-normal">
@@ -1659,7 +1585,7 @@ export default function DiagnosticAnalytics({
               </p>
             </div>
             <div className="flex items-center justify-between border-t border-slate-900 mt-3 pt-2 text-[9.5px] font-mono text-slate-500">
-              <span>LATENCY: 310ms</span>
+              <span>REST API</span>
               <span>NO KEY NEEDED</span>
             </div>
           </div>
@@ -1671,7 +1597,7 @@ export default function DiagnosticAnalytics({
                 <span className="text-[10px] font-mono text-brand-green bg-brand-green/10 px-2 py-0.5 rounded-md font-bold uppercase">
                   Global Soil Profiles 250m
                 </span>
-                <span className="h-2 w-2 rounded-full bg-emerald-500" title="Active Feed Connect" />
+                <span className="h-2 w-2 rounded-full bg-slate-600" title="Publicly documented endpoint (not live-monitored)" />
               </div>
               <h4 className="text-xs font-bold text-slate-200">Soil pH & Nitrogen Baselines</h4>
               <p className="text-[11px] text-slate-400 leading-normal">
@@ -1679,7 +1605,7 @@ export default function DiagnosticAnalytics({
               </p>
             </div>
             <div className="flex items-center justify-between border-t border-slate-900 mt-3 pt-2 text-[9.5px] font-mono text-slate-500">
-              <span>LATENCY: 220ms</span>
+              <span>REST API</span>
               <span>KEYLESS API</span>
             </div>
           </div>
@@ -1691,7 +1617,7 @@ export default function DiagnosticAnalytics({
                 <span className="text-[10px] font-mono text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md font-bold uppercase">
                   OpenWeather Map
                 </span>
-                <span className="h-2 w-2 rounded-full bg-emerald-500" title="Active Feed Connect" />
+                <span className="h-2 w-2 rounded-full bg-slate-600" title="Publicly documented endpoint (not live-monitored)" />
               </div>
               <h4 className="text-xs font-bold text-slate-200">Atmospheric Microclimates</h4>
               <p className="text-[11px] text-slate-400 leading-normal">
@@ -1699,7 +1625,7 @@ export default function DiagnosticAnalytics({
               </p>
             </div>
             <div className="flex items-center justify-between border-t border-slate-900 mt-3 pt-2 text-[9.5px] font-mono text-slate-500">
-              <span>LATENCY: 98ms</span>
+              <span>REST API</span>
               <span>KEYLESS SECURE</span>
             </div>
           </div>
@@ -1711,7 +1637,7 @@ export default function DiagnosticAnalytics({
                 <span className="text-[10px] font-mono text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md font-bold uppercase">
                   Meteoblue Climate
                 </span>
-                <span className="h-2 w-2 rounded-full bg-emerald-500" title="Active Feed Connect" />
+                <span className="h-2 w-2 rounded-full bg-slate-600" title="Publicly documented endpoint (not live-monitored)" />
               </div>
               <h4 className="text-xs font-bold text-slate-200">Climate Histograms & Wind</h4>
               <p className="text-[11px] text-slate-400 leading-normal">
@@ -1719,7 +1645,7 @@ export default function DiagnosticAnalytics({
               </p>
             </div>
             <div className="flex items-center justify-between border-t border-slate-900 mt-3 pt-2 text-[9.5px] font-mono text-slate-500">
-              <span>LATENCY: 165ms</span>
+              <span>REST API</span>
               <span>FREE PUBLIC</span>
             </div>
           </div>
@@ -1731,7 +1657,7 @@ export default function DiagnosticAnalytics({
                 <span className="text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md font-bold uppercase">
                   FAO AgriData API
                 </span>
-                <span className="h-2 w-2 rounded-full bg-emerald-500" title="Active Feed Connect" />
+                <span className="h-2 w-2 rounded-full bg-slate-600" title="Publicly documented endpoint (not live-monitored)" />
               </div>
               <h4 className="text-xs font-bold text-slate-200">Agronomic Metrics & Standards</h4>
               <p className="text-[11px] text-slate-400 leading-normal">
@@ -1739,7 +1665,7 @@ export default function DiagnosticAnalytics({
               </p>
             </div>
             <div className="flex items-center justify-between border-t border-slate-900 mt-3 pt-2 text-[9.5px] font-mono text-slate-500">
-              <span>LATENCY: 240ms</span>
+              <span>REST API</span>
               <span>FREE DIRECT</span>
             </div>
           </div>
@@ -1751,7 +1677,7 @@ export default function DiagnosticAnalytics({
                 <span className="text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md font-bold uppercase">
                   World Bank Agronometrics
                 </span>
-                <span className="h-2 w-2 rounded-full bg-emerald-500" title="Active Feed Connect" />
+                <span className="h-2 w-2 rounded-full bg-slate-600" title="Publicly documented endpoint (not live-monitored)" />
               </div>
               <h4 className="text-xs font-bold text-slate-200">Macro Policy & Daylight Hours</h4>
               <p className="text-[11px] text-slate-400 leading-normal">
@@ -1759,7 +1685,7 @@ export default function DiagnosticAnalytics({
               </p>
             </div>
             <div className="flex items-center justify-between border-t border-slate-900 mt-3 pt-2 text-[9.5px] font-mono text-slate-500">
-              <span>LATENCY: 180ms</span>
+              <span>REST API</span>
               <span>FREE PUBLIC</span>
             </div>
           </div>
@@ -1771,7 +1697,7 @@ export default function DiagnosticAnalytics({
                 <span className="text-[10px] font-mono text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md font-bold uppercase">
                   GBIF Pest & Bio Vectors
                 </span>
-                <span className="h-2 w-2 rounded-full bg-emerald-500" title="Active Feed Connect" />
+                <span className="h-2 w-2 rounded-full bg-slate-600" title="Publicly documented endpoint (not live-monitored)" />
               </div>
               <h4 className="text-xs font-bold text-slate-200">Local Biodiversity Corridor</h4>
               <p className="text-[11px] text-slate-400 leading-normal">
@@ -1779,7 +1705,7 @@ export default function DiagnosticAnalytics({
               </p>
             </div>
             <div className="flex items-center justify-between border-t border-slate-900 mt-3 pt-2 text-[9.5px] font-mono text-slate-500">
-              <span>LATENCY: 275ms</span>
+              <span>REST API</span>
               <span>FREE API</span>
             </div>
           </div>
@@ -1791,7 +1717,7 @@ export default function DiagnosticAnalytics({
                 <span className="text-[10px] font-mono text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md font-bold uppercase">
                   USGS Geology API
                 </span>
-                <span className="h-2 w-2 rounded-full bg-emerald-500" title="Active Feed Connect" />
+                <span className="h-2 w-2 rounded-full bg-slate-600" title="Publicly documented endpoint (not live-monitored)" />
               </div>
               <h4 className="text-xs font-bold text-slate-200">Soil Mineralogy & Lithosphere</h4>
               <p className="text-[11px] text-slate-400 leading-normal">
@@ -1799,7 +1725,7 @@ export default function DiagnosticAnalytics({
               </p>
             </div>
             <div className="flex items-center justify-between border-t border-slate-900 mt-3 pt-2 text-[9.5px] font-mono text-slate-500">
-              <span>LATENCY: 110ms</span>
+              <span>REST API</span>
               <span>FREE LINK</span>
             </div>
           </div>
@@ -1811,7 +1737,7 @@ export default function DiagnosticAnalytics({
                 <span className="text-[10px] font-mono text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-md font-bold uppercase">
                   Sunrise-Sunset Solar
                 </span>
-                <span className="h-2 w-2 rounded-full bg-emerald-500" title="Active Feed Connect" />
+                <span className="h-2 w-2 rounded-full bg-slate-600" title="Publicly documented endpoint (not live-monitored)" />
               </div>
               <h4 className="text-xs font-bold text-slate-200">Photoperiod & Daylength Tracker</h4>
               <p className="text-[11px] text-slate-400 leading-normal">
@@ -1819,7 +1745,7 @@ export default function DiagnosticAnalytics({
               </p>
             </div>
             <div className="flex items-center justify-between border-t border-slate-900 mt-3 pt-2 text-[9.5px] font-mono text-slate-500">
-              <span>LATENCY: 75ms</span>
+              <span>REST API</span>
               <span>FREE PUBLIC</span>
             </div>
           </div>
@@ -1831,15 +1757,15 @@ export default function DiagnosticAnalytics({
                 <span className="text-[10px] font-mono text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-md font-bold uppercase">
                   Satellite Imagery API
                 </span>
-                <span className="h-2 w-2 rounded-full bg-emerald-500" title="Active Feed Connect" />
+                <span className="h-2 w-2 rounded-full bg-slate-600" title="Publicly documented endpoint (not live-monitored)" />
               </div>
-              <h4 className="text-xs font-bold text-slate-200">Ortho-Reflectance Bands</h4>
+              <h4 className="text-xs font-bold text-slate-200">Reflectance Estimate</h4>
               <p className="text-[11px] text-slate-400 leading-normal">
-                Synchronizes multi-spectral scans from Sentinel-2 orbits to capture chlorophyll tracking indices and water status maps.
+                Computes a location-based chlorophyll/water-status reflectance estimate (not live satellite imagery).
               </p>
             </div>
             <div className="flex items-center justify-between border-t border-slate-900 mt-3 pt-2 text-[9.5px] font-mono text-slate-500">
-              <span>LATENCY: 340ms</span>
+              <span>REST API</span>
               <span>FREE ENDPOINT</span>
             </div>
           </div>
@@ -1851,7 +1777,7 @@ export default function DiagnosticAnalytics({
                 <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md font-bold uppercase">
                   MET Norway Weather
                 </span>
-                <span className="h-2 w-2 rounded-full bg-emerald-500" title="Active Feed Connect" />
+                <span className="h-2 w-2 rounded-full bg-slate-600" title="Publicly documented endpoint (not live-monitored)" />
               </div>
               <h4 className="text-xs font-bold text-slate-200">Global Meteorological Streams</h4>
               <p className="text-[11px] text-slate-400 leading-normal">
@@ -1859,7 +1785,7 @@ export default function DiagnosticAnalytics({
               </p>
             </div>
             <div className="flex items-center justify-between border-t border-slate-900 mt-3 pt-2 text-[9.5px] font-mono text-slate-500">
-              <span>LATENCY: 85ms</span>
+              <span>REST API</span>
               <span>FREE OPEN</span>
             </div>
           </div>
@@ -1871,7 +1797,7 @@ export default function DiagnosticAnalytics({
                 <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md font-bold uppercase">
                   USGS Water Services
                 </span>
-                <span className="h-2 w-2 rounded-full bg-emerald-500" title="Active Feed Connect" />
+                <span className="h-2 w-2 rounded-full bg-slate-600" title="Publicly documented endpoint (not live-monitored)" />
               </div>
               <h4 className="text-xs font-bold text-slate-200">Streamflow & Aquifer Levels</h4>
               <p className="text-[11px] text-slate-400 leading-normal">
@@ -1879,7 +1805,7 @@ export default function DiagnosticAnalytics({
               </p>
             </div>
             <div className="flex items-center justify-between border-t border-slate-900 mt-3 pt-2 text-[9.5px] font-mono text-slate-500">
-              <span>LATENCY: 155ms</span>
+              <span>REST API</span>
               <span>FREE KEYLESS</span>
             </div>
           </div>
@@ -1891,7 +1817,7 @@ export default function DiagnosticAnalytics({
                 <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-md font-bold uppercase">
                   NOAA Hazard Feeds
                 </span>
-                <span className="h-2 w-2 rounded-full bg-emerald-500" title="Active Feed Connect" />
+                <span className="h-2 w-2 rounded-full bg-slate-600" title="Publicly documented endpoint (not live-monitored)" />
               </div>
               <h4 className="text-xs font-bold text-slate-200">Alert Grids & Radar Forecasts</h4>
               <p className="text-[11px] text-slate-400 leading-normal">
@@ -1899,7 +1825,7 @@ export default function DiagnosticAnalytics({
               </p>
             </div>
             <div className="flex items-center justify-between border-t border-slate-900 mt-3 pt-2 text-[9.5px] font-mono text-slate-500">
-              <span>LATENCY: 120ms</span>
+              <span>REST API</span>
               <span>FREE PUBLIC</span>
             </div>
           </div>
@@ -1911,7 +1837,7 @@ export default function DiagnosticAnalytics({
                 <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-md font-bold uppercase">
                   OpenAQ Quality API
                 </span>
-                <span className="h-2 w-2 rounded-full bg-emerald-500" title="Active Feed Connect" />
+                <span className="h-2 w-2 rounded-full bg-slate-600" title="Publicly documented endpoint (not live-monitored)" />
               </div>
               <h4 className="text-xs font-bold text-slate-200">Fine Particulates & Ozone Status</h4>
               <p className="text-[11px] text-slate-400 leading-normal">
@@ -1919,7 +1845,7 @@ export default function DiagnosticAnalytics({
               </p>
             </div>
             <div className="flex items-center justify-between border-t border-slate-900 mt-3 pt-2 text-[9.5px] font-mono text-slate-500">
-              <span>LATENCY: 172ms</span>
+              <span>REST API</span>
               <span>KEYLESS API</span>
             </div>
           </div>

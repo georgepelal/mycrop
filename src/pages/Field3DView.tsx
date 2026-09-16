@@ -2,19 +2,14 @@ import React, { useRef, useEffect, useState } from "react";
 import * as THREE from "three";
 import { 
   Compass, 
-  Map, 
   Layers, 
   TrendingUp, 
   Droplets, 
-  Eye, 
   Play, 
-  Pause, 
-  RotateCcw,
+  Pause,
   Sparkles,
   Info,
-  ChevronRight,
   Sun,
-  CloudLightning,
   AlertTriangle,
   Share2,
   Copy,
@@ -194,9 +189,7 @@ export default function Field3DView({ parcels = [], initialSelectedParcelId }: F
   
   // Animation loop variables
   const animationFrameId = useRef<number | null>(null);
-  const plantsGroupRef = useRef<THREE.Group | null>(null);
   const terrainMeshRef = useRef<THREE.Mesh | null>(null);
-  const moistureLayerRef = useRef<THREE.Mesh | null>(null);
 
   // Re-render select options when selectedParcel changes
   const handleParcelChange = (id: string) => {
@@ -354,9 +347,6 @@ export default function Field3DView({ parcels = [], initialSelectedParcelId }: F
       soilColorObj.addScalar(0.08);
     }
 
-    // Material logic matching active viewMode filter HUD
-    let terrainMaterial: THREE.Material;
-    
     // Create a highly realistic dynamic GIS satellite texture draped over the terrain top by loading real map tiles!
     const createSatelliteTexture = () => {
       const canvas = document.createElement("canvas");
@@ -534,7 +524,11 @@ export default function Field3DView({ parcels = [], initialSelectedParcelId }: F
               ctx.stroke();
               ctx.shadowBlur = 0;
             } else if (viewMode === "nutrients") {
-              // Draw Nitrogen, Phosphorus, Potassium hotspots inside the boundary polygon!
+              // Draw a Nitrogen concentration hotspot inside the boundary polygon, sized
+              // from the field's real registered nitrogen reading. Phosphorus and Potassium
+              // are intentionally NOT drawn here: this app has no real P/K measurement for
+              // any field, and fabricating spatial "hotspots" for them would misrepresent
+              // data that doesn't exist.
               ctx.save();
               drawBoundaryPath();
               ctx.clip();
@@ -543,9 +537,7 @@ export default function Field3DView({ parcels = [], initialSelectedParcelId }: F
               const userN = selectedParcel.soilGridsNitrogenValue || 110;
 
               const zones = [
-                { x: 250 + (seedValue * 31) % 400, y: 200 + (seedValue * 21) % 400, r: 240 + (userN % 20) * 8, color: "rgba(16, 185, 129, 0.65)", label: "Nitrogen (N)" },
-                { x: 750 - (seedValue * 19) % 350, y: 300 + (seedValue * 13) % 450, r: 210 + (seedValue % 5) * 15, color: "rgba(249, 115, 22, 0.55)", label: "Phosphorus (P)" },
-                { x: 400 + (seedValue * 17) % 400, y: 750 - (seedValue * 29) % 350, r: 230 + (seedValue % 6) * 10, color: "rgba(139, 92, 246, 0.6)", label: "Potassium (K)" }
+                { x: 250 + (seedValue * 31) % 400, y: 200 + (seedValue * 21) % 400, r: 240 + (userN % 20) * 8, color: "rgba(16, 185, 129, 0.65)", label: "Nitrogen (N)" }
               ];
 
               zones.forEach((z) => {
@@ -649,7 +641,7 @@ export default function Field3DView({ parcels = [], initialSelectedParcelId }: F
     };
 
     satelliteTexture = createSatelliteTexture();
-    terrainMaterial = new THREE.MeshStandardMaterial({
+    const terrainMaterial: THREE.Material = new THREE.MeshStandardMaterial({
       map: satelliteTexture,
       roughness: soilRoughness,
       metalness: 0.08,
@@ -875,12 +867,8 @@ export default function Field3DView({ parcels = [], initialSelectedParcelId }: F
     updateCameraPosition();
 
     // 10. Frame Ticking Animation Loop
-    let clock = new THREE.Clock();
-
     const animate = () => {
       animationFrameId.current = requestAnimationFrame(animate);
-
-      const elapsedTime = clock.getElapsedTime();
 
       // Automatic slow landscape preview revolutions
       if (autoRotate && !isDragging) {
@@ -1257,37 +1245,32 @@ export default function Field3DView({ parcels = [], initialSelectedParcelId }: F
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
-                      Active NPK Telemetry
+                      Nitrogen Status
                     </span>
-                    <span className="text-[9px] text-slate-400 font-mono">Soil Health Scan</span>
+                    <span className="text-[9px] text-slate-400 font-mono">Registered Field Data</span>
                   </div>
 
                   {/* Visual Color Scale Legend */}
                   <div className="space-y-1">
                     <span className="text-[8px] text-slate-400 uppercase font-mono font-bold block">Heatmap Color Legend</span>
-                    <div className="grid grid-cols-4 gap-1">
+                    <div className="grid grid-cols-2 gap-1">
                       <div className="flex flex-col items-center p-1 rounded bg-slate-800 border border-slate-700 text-center">
                         <span className="h-1.5 w-full rounded bg-emerald-500 mb-0.5" />
                         <span className="text-[7.5px] text-slate-300 font-mono leading-none">N (Optimal)</span>
-                      </div>
-                      <div className="flex flex-col items-center p-1 rounded bg-slate-800 border border-slate-700 text-center">
-                        <span className="h-1.5 w-full rounded bg-orange-500 mb-0.5" />
-                        <span className="text-[7.5px] text-slate-300 font-mono leading-none">P (Active)</span>
-                      </div>
-                      <div className="flex flex-col items-center p-1 rounded bg-slate-800 border border-slate-700 text-center">
-                        <span className="h-1.5 w-full rounded bg-violet-500 mb-0.5" />
-                        <span className="text-[7.5px] text-slate-300 font-mono leading-none">K (Reserve)</span>
                       </div>
                       <div className="flex flex-col items-center p-1 rounded bg-slate-800 border border-slate-700 text-center">
                         <span className="h-1.5 w-full rounded bg-red-500 mb-0.5" />
                         <span className="text-[7.5px] text-slate-300 font-mono leading-none">Deficient</span>
                       </div>
                     </div>
+                    <p className="text-[7.5px] text-slate-500 leading-snug pt-0.5">
+                      Phosphorus/Potassium are not shown: this deployment has no real P/K measurement for this field.
+                    </p>
                   </div>
 
-                  {/* NPK Values Progress Gauges */}
+                  {/* Nitrogen Progress Gauge */}
                   <div className="space-y-2 pt-1.5 text-left border-t border-slate-800/80">
-                    
+
                     {/* Nitrogen (N) */}
                     <div className="space-y-0.5">
                       <div className="flex justify-between items-center text-[10px] font-mono">
@@ -1299,57 +1282,19 @@ export default function Field3DView({ parcels = [], initialSelectedParcelId }: F
                         </span>
                       </div>
                       <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
+                        <div
+                          className="h-full bg-emerald-500 rounded-full transition-all duration-500"
                           style={{ width: `${Math.min(100, (selectedParcel.soilGridsNitrogenValue || 110) / 1.5)}%` }}
                         />
                       </div>
                       <span className="text-[8.5px] text-slate-400 block leading-tight">Controls crop leaf vegetation growth.</span>
                     </div>
 
-                    {/* Phosphorus (P) */}
-                    <div className="space-y-0.5">
-                      <div className="flex justify-between items-center text-[10px] font-mono">
-                        <span className="text-orange-400 font-bold flex items-center gap-1">
-                          🟧 P - Phosphorus
-                        </span>
-                        <span className="font-bold text-slate-200">
-                          {Math.round(((selectedParcel.soilPH || 6.5) * 12 + (parseInt(selectedParcel.id.replace(/\D/g, "")) || 5) * 3) % 45) + 15} ppm
-                        </span>
-                      </div>
-                      <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-orange-500 rounded-full transition-all duration-500" 
-                          style={{ width: `${((Math.round(((selectedParcel.soilPH || 6.5) * 12 + (parseInt(selectedParcel.id.replace(/\D/g, "")) || 5) * 3) % 45) + 15) / 60) * 100}%` }}
-                        />
-                      </div>
-                      <span className="text-[8.5px] text-slate-400 block leading-tight">Spurs subsoil root establishment & plant dividing.</span>
-                    </div>
-
-                    {/* Potassium (K) */}
-                    <div className="space-y-0.5">
-                      <div className="flex justify-between items-center text-[10px] font-mono">
-                        <span className="text-violet-400 font-bold flex items-center gap-1">
-                          🟪 K - Potassium
-                        </span>
-                        <span className="font-bold text-slate-200">
-                          {Math.round(((selectedParcel.soilGridsClay || 32) * 4.2 + (parseInt(selectedParcel.id.replace(/\D/g, "")) || 8) * 8) % 180) + 120} ppm
-                        </span>
-                      </div>
-                      <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-violet-500 rounded-full transition-all duration-500" 
-                          style={{ width: `${((Math.round(((selectedParcel.soilGridsClay || 32) * 4.2 + (parseInt(selectedParcel.id.replace(/\D/g, "")) || 8) * 8) % 180) + 120) / 300) * 100}%` }}
-                        />
-                      </div>
-                      <span className="text-[8.5px] text-slate-400 block leading-tight">Controls water transpiration & cellular stress defense.</span>
-                    </div>
-
                   </div>
 
                   {/* Recommended Action */}
                   <div className="bg-slate-850 border border-slate-800 rounded-xl p-2 text-[9px] text-slate-300 leading-normal">
-                    <strong className="text-emerald-400 block mb-0.5">🌾 AGRI-NPK ADVISORY:</strong>
+                    <strong className="text-emerald-400 block mb-0.5">🌾 NITROGEN ADVISORY:</strong>
                     {selectedParcel.soilGridsNitrogenValue && selectedParcel.soilGridsNitrogenValue > 115 
                       ? "Nitrogen levels are healthy and pristine. Suspend auxiliary nitrate dressings to protect local water purity and prevent lodging."
                       : "Nitrogen gaps detected in sandier rows. Apply pre-season cover crop green manure to naturally replenish nitrogen reserves."

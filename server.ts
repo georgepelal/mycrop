@@ -6,7 +6,7 @@ import { GoogleGenAI } from "@google/genai";
 
 dotenv.config();
 
-const app = express();
+export const app = express();
 const PORT = 3000;
 
 // Set up body parsers with limits for custom uploads
@@ -151,7 +151,6 @@ app.post("/api/predict", async (req, res) => {
 
     // 2. Query Gemini if API Key is configured for elite custom agronomist reports
     const ai = getGeminiClient();
-    let aiResponseText = "";
     let parsedAdvice = {
       environmentalAnalysis: `Based on your NDVI score of ${ndviValue} and Soil Water NDWI score of ${ndwiValue}, vegetation biomass is typical of a standard ${soilType} cycle. Nitrogen status is ${nitrogen}.`,
       agronomicTips: [
@@ -169,7 +168,7 @@ app.post("/api/predict", async (req, res) => {
 
     if (ai) {
       try {
-        let promptText = `
+        const promptText = `
         You are MyCrop Agronomist AI. A farmer has requested a high-precision ROI and agronomist report:
         ---
         Crop Selected: ${cropType}
@@ -274,7 +273,7 @@ app.post("/api/predict", async (req, res) => {
 });
 
 // Hand-crafted high-fidelity rule-based response generator for AI Advisor fallback
-function generateFallbackChatResponse(userMessage: string, activeParcel: any): string {
+export function generateFallbackChatResponse(userMessage: string, activeParcel: any): string {
   const msg = userMessage.toLowerCase();
   const crop = activeParcel ? activeParcel.cropType : "your crops";
   const pName = activeParcel ? activeParcel.name : "your parcel";
@@ -285,7 +284,7 @@ function generateFallbackChatResponse(userMessage: string, activeParcel: any): s
   const nitro = activeParcel ? activeParcel.nitrogen : "Optimal";
 
   if (msg.includes("ph") || msg.includes("acid") || msg.includes("alkaline") || msg.includes("lime")) {
-    let advice = "";
+    let advice: string;
     if (pH < 5.5) {
       advice = `Your current pH of **${pH}** is highly acidic, which blocks critical macro-nutrients (especially Nitrogen and Phosphorus) for **${crop}**. I recommend applying agricultural limestone (calcium carbonate) at a rate of 2.5 tons per hectare to buffer the soil back toward 6.5.`;
     } else if (pH < 6.2) {
@@ -305,7 +304,7 @@ ${advice}
   }
 
   if (msg.includes("water") || msg.includes("irrigation") || msg.includes("moisture") || msg.includes("dry") || msg.includes("drought") || msg.includes("ndwi") || msg.includes("rain") || msg.includes("humidity")) {
-    let wetnessAdvice = "";
+    let wetnessAdvice: string;
     if (moisture < 35 || ndwi < 0.25) {
       wetnessAdvice = `Your water-stress index (NDWI: **${ndwi}**) and soil moisture (**${moisture}%**) indicate a severe drought stress state for **${crop}**. Cellular turgorous pressure is plunging, which will cause leaf curling and stunt ear/stem development. You should increase your center-pivot irrigation emitters by **15mm over the next 48 hours**.`;
     } else if (moisture > 80 || ndwi > 0.75) {
@@ -323,7 +322,7 @@ ${wetnessAdvice}
   }
 
   if (msg.includes("nitrogen") || msg.includes("npk") || msg.includes("fertilizer") || msg.includes("defic") || msg.includes("optimal") || msg.includes("surplus") || msg.includes("soil")) {
-    let fertilizationGuide = "";
+    let fertilizationGuide: string;
     if (nitro === "Deficient" || msg.includes("deficient")) {
       fertilizationGuide = `Your field's Nitrogen level is currently **Deficient**. Nitrogen is the fundamental building block of crop chlorophyll (NDVI: **${ndvi}**). To prevent lower-canopy leaf yellowing (chlorosis), I recommend a side-dress application of Urea (46-0-0) or UAN solution at a rate of 120 kg/Ha.`;
     } else if (nitro === "Surplus" || msg.includes("surplus")) {
@@ -778,7 +777,7 @@ app.post("/api/historical-reanalysis", async (req, res) => {
     const latitude = parseFloat(lat);
     const longitude = parseFloat(lng);
 
-    let decadalData: Array<{
+    const decadalData: Array<{
       decade: string;
       avgTempMax: number;
       avgTempMin: number;
@@ -831,12 +830,12 @@ app.post("/api/ensemble-dispersion", async (req, res) => {
     const longitude = parseFloat(lng);
 
     let dates: string[] = [];
-    let tempMaxMean: number[] = [];
-    let tempMaxHigh: number[] = [];
-    let tempMaxLow: number[] = [];
-    let rainMean: number[] = [];
-    let rainHigh: number[] = [];
-    let rainProbability: number[] = [];
+    const tempMaxMean: number[] = [];
+    const tempMaxHigh: number[] = [];
+    const tempMaxLow: number[] = [];
+    const rainMean: number[] = [];
+    const rainHigh: number[] = [];
+    const rainProbability: number[] = [];
     let isLiveEnsemble = false;
 
     try {
@@ -907,10 +906,9 @@ app.post("/api/marine-hydrodynamics", async (req, res) => {
     const latitude = parseFloat(lat);
     const longitude = parseFloat(lng);
 
-    let waveHeightMax: number = 0.8;
-    let wavePeriod: number = 6.5;
-    let waveDirection: string = "ENE";
-    let seaSurfaceTemp: number = 17.5;
+    let waveHeightMax: number | undefined;
+    let wavePeriod: number | undefined;
+    let waveDirection: string | undefined;
     let isCoastalZone = false;
 
     try {
@@ -925,7 +923,7 @@ app.post("/api/marine-hydrodynamics", async (req, res) => {
             waveHeightMax = parseFloat(maxH.toFixed(2));
             wavePeriod = parseFloat((data.daily.wave_period_max?.[0] || 6.5).toFixed(1));
             const angleVal = data.daily.wave_direction_dominant?.[0] || 75;
-            
+
             // Format compass direction
             const directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
             const index = Math.round(angleVal / 22.5) % 16;
@@ -935,11 +933,15 @@ app.post("/api/marine-hydrodynamics", async (req, res) => {
         }
       }
     } catch (e) {
-      console.warn("Marine wave telemetry failed. Region likely inland landmass. Adapting to simulation...");
+      console.warn("Marine wave telemetry failed:", e);
+    }
+
+    if (!isCoastalZone || waveHeightMax === undefined) {
+      return res.status(502).json({ error: "No marine wave data available for this location (it may not be a coastal or marine area, or the marine forecast provider is unavailable)." });
     }
 
     // Determine Sea surface temperature based on latitude
-    seaSurfaceTemp = parseFloat(Math.max(4.0, 27.0 - Math.abs(latitude) * 0.48).toFixed(1));
+    const seaSurfaceTemp = parseFloat(Math.max(4.0, 27.0 - Math.abs(latitude) * 0.48).toFixed(1));
 
     // Evaluate Risk Levels & Suitability for coastal marine agriculture (Aquaculture)
     let turbulenceRisk: "Very Calm" | "Moderate Surge" | "Storm Swell Warning" = "Very Calm";
@@ -2275,7 +2277,7 @@ app.post("/api/pollinator-activity", async (req, res) => {
       // Temperature: Under 12°C: bees don't fly. 15-28°C: perfect. Over 33°C: bees switch to cooling the hive.
       // Wind: Over 20 km/h: flight speed suffers. Over 30 km/h: bees stay inside.
       // Rain: Over 0.5 mm: severe flight limitation.
-      let baseHours = 10; // ideal daylight window
+      const baseHours = 10; // ideal daylight window
 
       // Temperature penalties
       let tempModifier = 1.0;
@@ -3164,7 +3166,7 @@ app.post("/api/plant-dictionary-lookup", async (req, res) => {
 // API Endpoint: USDA Quick Stats and World Bank crop economic market price trackers
 app.post("/api/usda-crop-pricing", async (req, res) => {
   try {
-    const { cropName = "Corn", lat, lng } = req.body;
+    const { cropName = "Corn" } = req.body;
 
     const baseContracts: Record<string, any> = {
       corn: { pricePerBushelUsd: 4.32, activeExchange: "CBOT (Chicago)", tradingVolume: "High", yieldPerAcreUsBushel: 177.3, priceTrend: "Slightly Bearish" },
@@ -3176,7 +3178,7 @@ app.post("/api/usda-crop-pricing", async (req, res) => {
     };
 
     const normKey = cropName.toLowerCase().replace(/[^a-z]/g, "");
-    let stats = baseContracts[normKey];
+    const stats = baseContracts[normKey];
     if (!stats) {
       return res.status(404).json({ error: `Market data not available for ${cropName}. Please try Corn, Soybeans, Wheat, Barley, Potato, or Tomato.` });
     }
@@ -3491,7 +3493,7 @@ app.post("/api/gdacs-active-hazards", async (req, res) => {
     const longitude = parseFloat(lng);
 
     let lives = false;
-    let nearbyHazards: any[] = [];
+    const nearbyHazards: any[] = [];
 
     try {
       const gdacsUrl = "https://www.gdacs.org/xml/gdacs.geojson";
@@ -3621,7 +3623,7 @@ app.post("/api/usgs-hydrology-waterwatch", async (req, res) => {
     const longitude = parseFloat(lng);
 
     let lives = false;
-    let stations: any[] = [];
+    const stations: any[] = [];
 
     try {
       // Query USGS stream values within a narrow square bounding box
@@ -3680,35 +3682,39 @@ app.post("/api/usgs-hydrology-waterwatch", async (req, res) => {
 app.get("/api/global-greenhouse-gas-trends", async (req, res) => {
   try {
     let lives = false;
-    let co2 = 422.5;
-    let methane = 1921.2;
-    let nitrous = 336.1;
+    let co2: number | undefined;
+    let methane: number | undefined;
+    let nitrous: number | undefined;
 
     try {
       const co2Res = await fetch("https://global-warming.org/api/co2-api");
       if (co2Res.ok) {
         const co2Json = await co2Res.json();
         if (co2Json && Array.isArray(co2Json.co2) && co2Json.co2.length > 0) {
-          lives = true;
-          co2 = parseFloat(co2Json.co2[co2Json.co2.length - 1].trend) || 422.5;
+          co2 = parseFloat(co2Json.co2[co2Json.co2.length - 1].trend);
         }
       }
       const ch4Res = await fetch("https://global-warming.org/api/methane-api");
       if (ch4Res.ok) {
         const ch4Json = await ch4Res.json();
         if (ch4Json && Array.isArray(ch4Json.methane) && ch4Json.methane.length > 0) {
-          methane = parseFloat(ch4Json.methane[ch4Json.methane.length - 1].trend) || 1921.2;
+          methane = parseFloat(ch4Json.methane[ch4Json.methane.length - 1].trend);
         }
       }
       const n2oRes = await fetch("https://global-warming.org/api/nitrous-oxide-api");
       if (n2oRes.ok) {
         const n2oJson = await n2oRes.json();
         if (n2oJson && Array.isArray(n2oJson.nitrous) && n2oJson.nitrous.length > 0) {
-          nitrous = parseFloat(n2oJson.nitrous[n2oJson.nitrous.length - 1].trend) || 336.1;
+          nitrous = parseFloat(n2oJson.nitrous[n2oJson.nitrous.length - 1].trend);
         }
       }
+      lives = co2 !== undefined && !isNaN(co2) && methane !== undefined && !isNaN(methane) && nitrous !== undefined && !isNaN(nitrous);
     } catch (e) {
       console.warn("Global warming indicators down:", e);
+    }
+
+    if (!lives) {
+      return res.status(502).json({ error: "Atmospheric trace gas trend data is currently unavailable from the upstream provider." });
     }
 
     res.json({
@@ -3721,7 +3727,7 @@ app.get("/api/global-greenhouse-gas-trends", async (req, res) => {
       },
       apiCitation: "Atmospheric greenhouse gas trends provided directly by the Global Warming Index API tracking services."
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to assemble atmospheric greenhouse index trends" });
   }
 });
@@ -3737,22 +3743,26 @@ app.post("/api/openmeteo-uv-radiation", async (req, res) => {
     const longitude = parseFloat(lng);
 
     let lives = false;
-    let uvIndexMax = 6.2;
-    let uvIndexClearSkyMax = 7.5;
+    let uvIndexMax: number | undefined;
+    let uvIndexClearSkyMax: number | undefined;
 
     try {
       const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=uv_index_max,uv_index_clear_sky_max&timezone=auto`;
       const response = await fetch(url);
       if (response.ok) {
         const json = await response.json();
-        if (json && json.daily) {
+        if (json && json.daily && json.daily.uv_index_max?.[0] !== undefined && json.daily.uv_index_max?.[0] !== null) {
           lives = true;
-          uvIndexMax = json.daily.uv_index_max?.[0] ?? 6.2;
-          uvIndexClearSkyMax = json.daily.uv_index_clear_sky_max?.[0] ?? 7.5;
+          uvIndexMax = json.daily.uv_index_max[0];
+          uvIndexClearSkyMax = json.daily.uv_index_clear_sky_max?.[0] ?? uvIndexMax;
         }
       }
     } catch (e) {
       console.warn("Open-Meteo UV Index API call had network issues:", e);
+    }
+
+    if (!lives || uvIndexMax === undefined) {
+      return res.status(502).json({ error: "Ultraviolet index forecast is currently unavailable from the upstream provider." });
     }
 
     res.json({
@@ -3764,7 +3774,7 @@ app.post("/api/openmeteo-uv-radiation", async (req, res) => {
       riskLevel: uvIndexMax >= 8 ? "Very High / Extreme" : uvIndexMax >= 6 ? "High Risk" : uvIndexMax >= 3 ? "Moderate Risk" : "Low Risk",
       apiCitation: "Ultraviolet Index and clear-sky solar insolation calculated globally via the Open-Meteo Atmospheric Forecast Suite."
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to assemble ultraviolet solar radiation index" });
   }
 });
@@ -3816,7 +3826,7 @@ app.post("/api/osm-local-natural-features", async (req, res) => {
       features: foundFeatures,
       apiCitation: "Proximity natural features parsed globally via OpenStreetMap Overpass spatial querying APIs."
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to query local geospatial natural structures" });
   }
 });
@@ -3850,7 +3860,7 @@ app.get("/api/open-exchange-rates", async (req, res) => {
       rates,
       apiCitation: "Global financial exchange ratios updated in real-time from the Open Exchange Rates Network Service."
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to assemble financial market rates" });
   }
 });
@@ -3936,7 +3946,7 @@ Make sure the output is strictly a flat JSON array of these 45 objects. Do NOT u
 app.get("/api/noaa-space-weather-activity", async (req, res) => {
   try {
     let lives = false;
-    let scales = {
+    const scales = {
       radiationStorms: 0,
       radioBlackouts: 0,
       geomagneticStorms: 0,
@@ -3982,7 +3992,7 @@ app.get("/api/noaa-space-weather-activity", async (req, res) => {
       scales,
       apiCitation: "Ionosphere scintillation risk and geomagnetic storm status tracked live from the NOAA Space Weather Prediction Center (SWPC)."
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to load NOAA space weather indicators" });
   }
 });
@@ -3990,44 +4000,46 @@ app.get("/api/noaa-space-weather-activity", async (req, res) => {
 // API Endpoint: Keyless IP-based client geolocation proxy
 app.get("/api/client-ip-geolocation", async (req, res) => {
   try {
-    let lives = false;
-    let geo = {
-      ip: "127.0.0.1",
-      city: "Ames",
-      region: "Iowa",
-      country: "US",
-      latitude: 42.0308,
-      longitude: -93.6319,
-      timezone: "America/Chicago"
-    };
+    let geo: {
+      ip: string;
+      city: string;
+      region: string;
+      country: string;
+      latitude: number;
+      longitude: number;
+      timezone: string;
+    } | undefined;
 
     try {
       const response = await fetch("https://ipapi.co/json/");
       if (response.ok) {
         const json = await response.json();
         if (json && json.latitude && json.longitude) {
-          lives = true;
           geo = {
-            ip: json.ip || "127.0.0.1",
-            city: json.city || "Ames",
-            region: json.region || "Iowa",
-            country: json.country_code || "US",
+            ip: json.ip || "unknown",
+            city: json.city || "Unknown",
+            region: json.region || "Unknown",
+            country: json.country_code || "Unknown",
             latitude: parseFloat(json.latitude),
             longitude: parseFloat(json.longitude),
-            timezone: json.timezone || "America/Chicago"
+            timezone: json.timezone || "Unknown"
           };
         }
       }
     } catch (e) {
-      console.warn("ipapi.co rate limit or DNS failure, using standard agricultural station coordinates:", e);
+      console.warn("ipapi.co rate limit or DNS failure:", e);
+    }
+
+    if (!geo) {
+      return res.status(502).json({ error: "Could not resolve your approximate location from the IP geolocation provider." });
     }
 
     res.json({
-      isLiveIpGeo: lives,
+      isLiveIpGeo: true,
       geo,
       apiCitation: "Grower local coordinate approximation resolved from client browser session IP using IPAPI geo-distribution indexes."
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to approximate local user location" });
   }
 });
@@ -4096,7 +4108,7 @@ app.post("/api/iss-current-overhead", async (req, res) => {
       iss,
       apiCitation: "Real-time satellite orbital footprints and current flight logs parsed from the Open ISS Tracking Telemetry database (wheretheiss.at)."
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to load real-time ISS satellite orbital telemetry" });
   }
 });
@@ -4139,7 +4151,7 @@ app.post("/api/local-public-holidays", async (req, res) => {
       holidays: holidaysList,
       apiCitation: "Standard statutory calendar markers and national holiday records sourced live from the Nager Public Holidays Service."
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to assemble localized regional public holidays index" });
   }
 });
@@ -4193,7 +4205,7 @@ app.post("/api/regional-country-sovereign", async (req, res) => {
       details,
       apiCitation: "Sovereign geographic indicators, national flags, and administrative boundaries retrieved live from the RestCountries Global Database."
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to assemble national sovereign details" });
   }
 });
@@ -4237,7 +4249,7 @@ app.post("/api/crop-literature-handbooks", async (req, res) => {
       books,
       apiCitation: "Open-access books directory and cultural scientific handbooks queried from the Open Library Search APIs."
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to compile agronomic books portfolio" });
   }
 });
@@ -4279,7 +4291,7 @@ app.get("/api/nasa-eonet-active-events", async (req, res) => {
       events,
       apiCitation: "Near real-time planetary events, severe storm tracks, and wildfire warnings parsed directly from NASA Earth Observatory Natural Event Tracker (EONET)."
     });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Failed to fetch NASA EONET climatic hazards" });
   }
 });
@@ -4316,7 +4328,7 @@ app.post("/api/sunrise-sunset-astronomy", async (req, res) => {
             try {
               const d = new Date(isoStr);
               return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-            } catch (err) {
+            } catch {
               return isoStr;
             }
           };
@@ -4345,7 +4357,7 @@ app.post("/api/sunrise-sunset-astronomy", async (req, res) => {
       results,
       apiCitation: "High-precision solar daylight boundaries and legal civil twilight spans sourced dynamically from Sunrise-Sunset astronomical catalogs."
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to assemble high-fidelity solar photoperiod indices" });
   }
 });
@@ -4410,7 +4422,7 @@ app.post("/api/worldbank-forest-coverage", async (req, res) => {
       isLiveWorldBank: lives,
       apiCitation: "Forest density and green canopy indicators compiled from the UN Food and Agriculture Organization (FAO) database queried via World Bank Pink Sheet Open API portals."
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to assemble high-fidelity World Bank forestry and landcover indexes" });
   }
 });
@@ -4462,7 +4474,7 @@ app.post("/api/gbif-species-suggest", async (req, res) => {
       suggestions,
       apiCitation: "Planetary taxonomic suggest and taxonomic backbone parsing powered by the GBIF (Global Biodiversity Information Facility) Backbone API."
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to query taxonomic species autocomplete suggestions" });
   }
 });
@@ -4514,7 +4526,7 @@ app.post("/api/openmeteo-boundary-layer", async (req, res) => {
       },
       apiCitation: "Boundary layer thickness, aerodynamic sheer, and mean sea-level pressure vectors extracted from high-resolution regional forecasting runs via Open-Meteo Global Forecasting Suite."
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to assemble convective planetary boundary layer metrics" });
   }
 });
@@ -4560,7 +4572,7 @@ app.post("/api/openmeteo-geotech-elevation", async (req, res) => {
       },
       apiCitation: "Precise geomorphology grids and barometric elevation data compiled via Open-Meteo Terrain Elevation Mapping services."
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to assemble precise micro-terrain geotech elevation metrics" });
   }
 });
@@ -4575,7 +4587,10 @@ app.post("/api/copernicus-sentinel-reflectance", async (req, res) => {
     const latitude = parseFloat(lat);
     const longitude = parseFloat(lng);
 
-    // Calculate deterministic vegetation / soil reflectance vectors based on coordinates
+    // NOTE: This endpoint does not call any live Sentinel-2 / Copernicus imagery API
+    // (that requires registered Copernicus Data Space credentials this deployment does
+    // not have). The values below are an illustrative, coordinate-derived estimate only
+    // -- not a measurement -- and must not be presented to users as live satellite data.
     const seed = Math.abs(Math.sin(latitude * 14.1 + longitude * 31.2));
     const ndviIndex = parseFloat((0.25 + seed * 0.60).toFixed(3)); // 0.25 to 0.85 NDVI (dense healthy foliage)
     const canopyMoisture = parseFloat((0.15 + (1 - seed) * 0.55).toFixed(3)); // Normalized Difference Water Index (NDWI)
@@ -4584,6 +4599,7 @@ app.post("/api/copernicus-sentinel-reflectance", async (req, res) => {
     res.json({
       latitude,
       longitude,
+      isEstimate: true,
       indexTimeline: {
         ndvi: ndviIndex,
         ndwi: canopyMoisture,
@@ -4595,9 +4611,9 @@ app.post("/api/copernicus-sentinel-reflectance", async (req, res) => {
         band4_Red: 665,
         band3_Green: 560
       },
-      apiCitation: "Regional vegetation index proxies, canopy density estimations, and soil-water-reflectance models aligned to Copernicus Sentinel-2 Level-2A Orthorectified Surface Reflectance registries."
+      apiCitation: "Illustrative vegetation/water/soil-reflectance estimate derived from location only. This deployment is not connected to live Copernicus Sentinel-2 imagery -- treat these figures as indicative, not measured."
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to compile Copernicus Sentinel-2 surface reflectance vectors" });
   }
 });
@@ -4654,7 +4670,7 @@ app.post("/api/usgs-hydro-basin-watersheds", async (req, res) => {
       },
       apiCitation: "Hydrologic Unit Code (HUC-12) classifications, national drainage basin divisions, and downstream hydro-connectivity statistics parsed via USGS National Hydrography Dataset API services."
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to determine regional hydrologic drainage basin boundaries" });
   }
 });
@@ -4685,19 +4701,11 @@ app.post("/api/crop-nutritive-macronutrients", async (req, res) => {
       const matchedKey = Object.keys(cropDB).find(key => norm.includes(key) || key.includes(norm));
       if (matchedKey) {
         item = cropDB[matchedKey];
-      } else {
-        // Dynamic deterministic crop nutritive estimator
-        const hash = norm.charCodeAt(0) + (norm.charCodeAt(1) || 0);
-        item = {
-          calories: 50 + (hash % 120),
-          proteinGrams: parseFloat((1.0 + (hash % 8) * 0.5).toFixed(1)),
-          carbsGrams: parseFloat((10.0 + (hash % 15) * 1.5).toFixed(1)),
-          fatGrams: parseFloat((0.1 + (hash % 4) * 0.3).toFixed(1)),
-          fiberGrams: parseFloat((1.0 + (hash % 5) * 0.8).toFixed(1)),
-          potassiumMg: 150 + (hash % 200),
-          vitaminCPersent: (hash % 25)
-        };
       }
+    }
+
+    if (!item) {
+      return res.status(404).json({ error: `No nutrient composition data available for "${cropName}". Try tomato, corn, wheat, soybean, potato, or rice.` });
     }
 
     res.json({
@@ -4706,7 +4714,7 @@ app.post("/api/crop-nutritive-macronutrients", async (req, res) => {
       dietaryImpact: item.calories > 150 ? "High density caloric grain staple" : "Water-rich micronutrient dense crop matrix",
       apiCitation: "Crop nutrient yield parameters, calorie coefficients, and phytochemistry profiles compiled from USDA FoodData Central and UN FAO Food Composition Tables."
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to assemble high-fidelity crop macronutrient profile" });
   }
 });
@@ -4799,7 +4807,7 @@ app.post("/api/weather-forecast", async (req, res) => {
     }
 
     res.json(data);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to assemble high-fidelity weather forecast" });
   }
 });
@@ -4831,4 +4839,6 @@ async function initializeWebServer() {
   });
 }
 
-initializeWebServer();
+if (process.env.NODE_ENV !== "test") {
+  initializeWebServer();
+}

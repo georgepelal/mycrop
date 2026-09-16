@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useSettings } from "../contexts/SettingsContext";
+import { useSettings } from "../contexts/useSettings";
 import { Parcel } from "../types";
 import { 
   Plus, 
@@ -8,11 +8,7 @@ import {
   Droplet, 
   TrendingUp, 
   Trees, 
-  FolderGit, 
-  Calendar, 
-  MapPin, 
-  Compass,
-  AlertCircle,
+  MapPin,
   Globe
 } from "lucide-react";
 
@@ -60,27 +56,28 @@ function ParcelMiniMap({ parcel }: { parcel: Parcel }) {
     }
   }
 
-  // Get coordinates for boundary drawing
-  // If actual boundaries are missing or empty, calculate a neat circular/subdivided custom visual polygon
-  const coords = parcel.boundaries && parcel.boundaries.length >= 3 
-    ? parcel.boundaries 
-    : [
-        { lat: lat + 0.0012, lng: lng - 0.0015 },
-        { lat: lat + 0.0014, lng: lng + 0.0015 },
-        { lat: lat - 0.0010, lng: lng + 0.0018 },
-        { lat: lat - 0.0013, lng: lng - 0.0010 }
-      ];
+  // Only draw a boundary polygon when the field has a real, user-drawn boundary --
+  // never fabricate one, since that would misrepresent the field's actual extent.
+  const hasRealBoundary = Boolean(parcel.boundaries && parcel.boundaries.length >= 3);
+  const coords = hasRealBoundary ? parcel.boundaries : [];
 
   // Convert each geographical boundary coordinate to screen pixel coordinates
-  const pointsStr = coords.map(pt => {
+  const toScreenPoint = (pt: { lat: number; lng: number }) => {
     const ptSafeLat = Math.max(-85, Math.min(85, pt.lat));
     const ptTileX = (pt.lng + 180) / 360 * n;
     const ptTileY = (1 - Math.log(Math.tan(ptSafeLat * Math.PI / 360 + Math.PI / 4)) / Math.PI) / 2 * n;
-    
+
     const xPx = (ptTileX - centerTileX) * 256 + width / 2;
     const yPx = (ptTileY - centerTileY) * 256 + height / 2;
+    return { xPx, yPx };
+  };
+
+  const pointsStr = coords.map(pt => {
+    const { xPx, yPx } = toScreenPoint(pt);
     return `${xPx.toFixed(1)},${yPx.toFixed(1)}`;
   }).join(" ");
+
+  const centerPoint = toScreenPoint({ lat, lng });
 
   return (
     <div className="absolute inset-0 z-0 select-none pointer-events-none overflow-hidden bg-slate-950">
@@ -115,36 +112,52 @@ function ParcelMiniMap({ parcel }: { parcel: Parcel }) {
         }} 
       />
 
-      {/* Accurate vector representation of the drawn polygon shape */}
+      {/* Vector representation of the field's drawn boundary -- only rendered when real */}
       <svg className="absolute inset-0 w-full h-full z-10 pointer-events-none">
-        <polygon
-          points={pointsStr}
-          fill={parcel.ndvi > 0.6 ? "rgba(34, 197, 94, 0.25)" : "rgba(34, 197, 94, 0.18)"}
-          stroke="#22c55e"
-          strokeWidth="2.5"
-          className="drop-shadow-[0_0_4px_rgba(34,197,94,0.7)]"
-          strokeDasharray="4 2"
-        />
-        {/* Render visible coordinate nodes vertices */}
-        {coords.map((pt, idx) => {
-          const ptSafeLat = Math.max(-85, Math.min(85, pt.lat));
-          const ptTileX = (pt.lng + 180) / 360 * n;
-          const ptTileY = (1 - Math.log(Math.tan(ptSafeLat * Math.PI / 360 + Math.PI / 4)) / Math.PI) / 2 * n;
-          const xPx = (ptTileX - centerTileX) * 256 + width / 2;
-          const yPx = (ptTileY - centerTileY) * 256 + height / 2;
-          return (
-            <circle
-              key={idx}
-              cx={xPx}
-              cy={yPx}
-              r="3"
-              fill="#ffffff"
-              stroke="#16a34a"
-              strokeWidth="2"
+        {hasRealBoundary ? (
+          <>
+            <polygon
+              points={pointsStr}
+              fill={parcel.ndvi > 0.6 ? "rgba(34, 197, 94, 0.25)" : "rgba(34, 197, 94, 0.18)"}
+              stroke="#22c55e"
+              strokeWidth="2.5"
+              className="drop-shadow-[0_0_4px_rgba(34,197,94,0.7)]"
+              strokeDasharray="4 2"
             />
-          );
-        })}
+            {/* Render visible coordinate nodes vertices */}
+            {coords.map((pt, idx) => {
+              const { xPx, yPx } = toScreenPoint(pt);
+              return (
+                <circle
+                  key={idx}
+                  cx={xPx}
+                  cy={yPx}
+                  r="3"
+                  fill="#ffffff"
+                  stroke="#16a34a"
+                  strokeWidth="2"
+                />
+              );
+            })}
+          </>
+        ) : (
+          // No boundary has been drawn for this field -- show only its center point,
+          // not a fabricated shape that would misrepresent the field's actual extent.
+          <circle
+            cx={centerPoint.xPx}
+            cy={centerPoint.yPx}
+            r="5"
+            fill="#22c55e"
+            stroke="#ffffff"
+            strokeWidth="2"
+          />
+        )}
       </svg>
+      {!hasRealBoundary && (
+        <span className="absolute bottom-2 right-2 z-10 text-[9px] font-bold uppercase tracking-wide text-white/80 bg-black/40 px-2 py-0.5 rounded-md">
+          No boundary drawn
+        </span>
+      )}
     </div>
   );
 }
@@ -156,7 +169,7 @@ interface ParcelsProps {
   onNavigateTo3D: () => void;
 }
 
-export default function Parcels({ parcels, onSelectParcel, onNavigateToForm, onNavigateTo3D }: ParcelsProps) {
+export default function Parcels({ parcels, onSelectParcel, onNavigateToForm }: ParcelsProps) {
   const { t } = useTranslation();
   const { formatArea, formatYield } = useSettings();
   return (

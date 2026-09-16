@@ -16,6 +16,7 @@ interface IndexTimeline {
 interface ReflectanceData {
   latitude: number;
   longitude: number;
+  isEstimate: boolean;
   indexTimeline: IndexTimeline;
   recommendedWavelengthsNano: {
     band8_NearInfrared: number;
@@ -29,7 +30,7 @@ export default function CopernicusReflectance({ onNavigate }: CopernicusReflecta
   const [data, setData] = useState<ReflectanceData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [locationName, setLocationName] = useState("");
+  const [, setLocationName] = useState("");
   const [showRawJSON, setShowRawJSON] = useState(false);
 
   const fetchData = async (lat: number, lng: number, name: string) => {
@@ -93,10 +94,10 @@ export default function CopernicusReflectance({ onNavigate }: CopernicusReflecta
           <div>
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
               <Satellite className="w-7 h-7 text-indigo-500" />
-              Satellite Reflectance
+              Reflectance Estimate
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              Sentinel-2 multispectral vegetation and soil optics indices.
+              Location-based vegetation and soil optics estimate (not live satellite imagery).
             </p>
           </div>
         </div>
@@ -116,7 +117,7 @@ export default function CopernicusReflectance({ onNavigate }: CopernicusReflecta
             Select a Location
           </h3>
           <p className="text-sm text-slate-500 max-w-md">
-            Query ESA satellite satellite optical bands for normalized difference vegetation and water indices.
+            Get a location-based estimate of normalized difference vegetation and water indices.
           </p>
         </div>
       )}
@@ -125,7 +126,7 @@ export default function CopernicusReflectance({ onNavigate }: CopernicusReflecta
         <div className="h-96 flex flex-col items-center justify-center border border-gray-100 rounded-3xl bg-white shadow-sm">
           <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mb-4" />
           <p className="text-sm font-medium text-gray-500">
-            Rendering Sentinel-2 surface reflectance composite arrays...
+            Computing reflectance index estimate...
           </p>
         </div>
       )}
@@ -199,10 +200,10 @@ export default function CopernicusReflectance({ onNavigate }: CopernicusReflecta
              </div>
           </div>
 
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex gap-4 text-slate-700">
-            <Info className="w-6 h-6 shrink-0 mt-0.5 text-slate-500" />
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex gap-4 text-amber-800">
+            <Info className="w-6 h-6 shrink-0 mt-0.5 text-amber-600" />
             <div className="text-sm leading-relaxed">
-              <strong className="block mb-1">Sentinel-2 Orthorectification Standard</strong> 
+              <strong className="block mb-1">Estimate, not a measurement</strong>
               {data.apiCitation}
             </div>
           </div>
@@ -210,7 +211,7 @@ export default function CopernicusReflectance({ onNavigate }: CopernicusReflecta
           <div className="bg-white border text-gray-900 border-gray-200 rounded-3xl p-6 shadow-sm">
             <div className="flex justify-between items-center mb-4">
               <div>
-                <h4 className="font-bold text-gray-800 text-sm">Raw API Response Payload</h4>
+                <h4 className="font-bold text-gray-800 text-sm">Raw Response Payload</h4>
               </div>
               <button 
                 onClick={() => setShowRawJSON(!showRawJSON)}

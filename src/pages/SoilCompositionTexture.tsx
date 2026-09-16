@@ -1,6 +1,6 @@
 import { EarthIslandVisualizer } from "../components/EarthIslandVisualizer";
-import React, { useState, useEffect, useRef } from "react";
-import { Layers, AlertCircle, Loader2, Sprout, Map as MapIcon, ChevronDown, Activity, FlaskConical, Weight, ArrowLeft, MapPin } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Layers, AlertCircle, Loader2, Sprout, Map as MapIcon, Activity, FlaskConical, Weight, ArrowLeft, MapPin } from "lucide-react";
 import { Parcel } from "../types";
 
 import { getCachedSoilData, setCachedSoilData } from "../utils/soilCache";
@@ -90,7 +90,7 @@ export default function SoilCompositionTexture({ parcels, activeParcelId, onSele
           clearTimeout(timeoutId);
         } catch(err) {
           clearTimeout(timeoutId);
-          throw new Error("Timeout");
+          throw new Error("Timeout", { cause: err });
         }
         
         if (!response.ok) {
@@ -137,15 +137,6 @@ export default function SoilCompositionTexture({ parcels, activeParcelId, onSele
         setCachedSoilData(fetchLat, fetchLng, parsedData);
       } catch (err: any) {
         console.warn("Error", err);
-        setData({
-          clay: { "0-5cm": 32, "5-15cm": 35, "15-30cm": 38, "30-60cm": 42, "60-100cm": 45, "100-200cm": 48 },
-          sand: { "0-5cm": 38, "5-15cm": 35, "15-30cm": 32, "30-60cm": 28, "60-100cm": 25, "100-200cm": 22 },
-          silt: { "0-5cm": 30, "5-15cm": 30, "15-30cm": 30, "30-60cm": 30, "60-100cm": 30, "100-200cm": 30 },
-          soc: { "0-5cm": 45, "5-15cm": 35, "15-30cm": 20, "30-60cm": 10, "60-100cm": 5, "100-200cm": 2 },
-          phh2o: { "0-5cm": 6.5, "5-15cm": 6.8, "15-30cm": 7.0, "30-60cm": 7.2, "60-100cm": 7.4, "100-200cm": 7.5 },
-          bdod: { "0-5cm": 1.2, "5-15cm": 1.3, "15-30cm": 1.4, "30-60cm": 1.5, "60-100cm": 1.6, "100-200cm": 1.7 },
-        });
-        return;
         setData(null);
         setError(err.message || "An unexpected error occurred");
       } finally {

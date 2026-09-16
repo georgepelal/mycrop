@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../contexts/AuthContext";
-import { Mail, Lock, ShieldAlert, ArrowRight, Eye, EyeOff, Loader2, User } from "lucide-react";
+import { useAuth } from "../contexts/useAuth";
+import { Mail, Lock, ArrowRight, Eye, EyeOff, Loader2, User } from "lucide-react";
 import CompanyLogo from "../components/CompanyLogo";
 
 export default function AuthPage() {

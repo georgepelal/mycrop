@@ -1,5 +1,4 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
 import { 
   Sprout, 
   Droplets, 
@@ -7,10 +6,9 @@ import {
   Map as MapIcon, 
   Activity,
   ArrowRight,
-  Wind,
-  Info
+  Wind
 } from "lucide-react";
-import { useSettings } from "../contexts/SettingsContext";
+import { useSettings } from "../contexts/useSettings";
 import { Parcel, CROP_PRESETS } from "../types";
 
 interface DashboardProps {
@@ -24,7 +22,6 @@ export default function Dashboard({
   activeParcelId, 
   onNavigate 
 }: DashboardProps) {
-  const { t } = useTranslation();
   const { formatArea, formatYield } = useSettings();
   const activeParcel = parcels.find(p => p.id === activeParcelId) || parcels[0];
 

@@ -9,19 +9,16 @@ import {
   CloudLightning, 
   Wind, 
   Droplets, 
-  Thermometer, 
   Sunset, 
   Sunrise, 
   AlertCircle, 
   Loader2, 
   MapPin, 
   Navigation,
-  CloudLightning as LightningIcon,
   Calendar,
   Compass,
   Clock
 } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { Parcel } from "../types";
 import CustomFieldVisualMap from "../components/CustomFieldVisualMap";
 
@@ -32,7 +29,6 @@ interface FieldWeatherPageProps {
 }
 
 export default function FieldWeatherPage({ parcels, activeParcelId, onSelectParcel }: FieldWeatherPageProps) {
-  const { t } = useTranslation();
   const [weatherData, setWeatherData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

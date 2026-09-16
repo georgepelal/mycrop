@@ -6,10 +6,6 @@ import {
   Bot,
   User,
   Loader2,
-  HelpCircle,
-  MessageSquare,
-  RefreshCw,
-  Compass,
   MapPin
 } from "lucide-react";
 import Markdown from "react-markdown";
@@ -55,11 +51,13 @@ export default function Chat({ parcels, activeParcelId, onSelectParcel }: ChatPr
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  // Reset the conversation whenever the focused field changes
+  // Reset the conversation whenever the focused field changes (by identity, not
+  // on every data refresh of the same field, which would wipe an in-progress chat)
   useEffect(() => {
     if (activeParcel) {
       setMessages([welcomeMessage(activeParcel)]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeParcel?.id]);
 
   // Scroll to bottom of chat

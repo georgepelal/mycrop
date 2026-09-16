@@ -1,26 +1,18 @@
 import { EarthIslandVisualizer } from "../components/EarthIslandVisualizer";
 import React, { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { useSettings } from "../contexts/SettingsContext";
+import { useSettings } from "../contexts/useSettings";
 
 import { getCachedTempData, setCachedTempData } from "../utils/tempCache";
 import { 
   Thermometer, 
-  Layers, 
   Flame, 
   Snowflake, 
-  Droplets, 
   Sprout, 
-  TrendingUp, 
-  Clock, 
   MapPin, 
   Info, 
   ArrowLeft,
   Loader2,
-  Calendar,
   Sparkles,
-  ChevronRight,
-  TrendingDown,
   Activity
 } from "lucide-react";
 import { Parcel } from "../types";
@@ -67,7 +59,6 @@ export default function DeepSoilTemperature({
   onSelectParcel, 
   onNavigate 
 }: DeepSoilTemperatureProps) {
-  const { t } = useTranslation();
   const { tempUnit, convertTemp } = useSettings();
 
   const [loading, setLoading] = useState(false);
@@ -75,7 +66,7 @@ export default function DeepSoilTemperature({
   
   // Coordinates and Location states
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [locationName, setLocationName] = useState("");
+  const [, setLocationName] = useState("");
   const [selectedCrop, setSelectedCrop] = useState("Corn");
 
   // Forecast Hourly Soil Data state
@@ -126,7 +117,7 @@ export default function DeepSoilTemperature({
       setCoords({ lat: 41.8781, lng: -87.6298 }); // Chicago / Midwest US Corn Belt
       setLocationName("Midwest Farm Belt, US");
     }
-  }, [activeParcelId, parcels]);
+  }, [activeParcel]);
 
   // Fetch Soil Temperature & Moisture hourly forecast from Open-Meteo
   useEffect(() => {
@@ -219,23 +210,6 @@ export default function DeepSoilTemperature({
   const currentMoistMid = (soilData?.moist_7_28[currIdx] ?? 0) * 100;
   const currentMoistDeep = (soilData?.moist_28_100[currIdx] ?? 0) * 100;
   const currentMoistBedrock = (soilData?.moist_100_255[currIdx] ?? 0) * 100;
-
-  // Render a visual temperature background color
-  const getTempColorClass = (temp: number) => {
-    if (temp <= 0) return "from-blue-600/20 to-blue-500/10 border-blue-400";
-    if (temp < 8) return "from-sky-500/20 to-sky-400/10 border-sky-300";
-    if (temp < 15) return "from-emerald-500/10 to-teal-400/5 border-emerald-300";
-    if (temp < 25) return "from-amber-500/20 to-orange-400/10 border-amber-300";
-    return "from-red-500/20 to-orange-500/10 border-red-400";
-  };
-
-  const getTempTextClass = (temp: number) => {
-    if (temp <= 0) return "text-blue-600 dark:text-blue-400";
-    if (temp < 8) return "text-sky-600 dark:text-sky-400";
-    if (temp < 15) return "text-teal-600 dark:text-teal-400";
-    if (temp < 25) return "text-amber-600 dark:text-amber-400";
-    return "text-rose-600 dark:text-rose-400";
-  };
 
   // Build chart-friendly data for the 7-day view (every 3 hours to avoid clutter)
   const chartData = soilData?.times

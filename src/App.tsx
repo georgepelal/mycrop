@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate, NavLink, useNavigate, useLocation } from "react-router-dom";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { AuthProvider } from "./contexts/AuthContext";
+import { useAuth } from "./contexts/useAuth";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import { Parcel } from "./types";
 import { getParcelsForUser, createParcelForUser } from "./lib/db";

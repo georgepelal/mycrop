@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Parcel } from "../types";
-import { useSettings } from "../contexts/SettingsContext";
+import { useSettings } from "../contexts/useSettings";
 
 interface CustomFieldVisualMapProps {
   parcel: Parcel;
@@ -24,7 +24,7 @@ export default function CustomFieldVisualMap({
 
   const lat = parcel?.latitude || parcel?.lat || 35.0;
   const lng = parcel?.longitude || parcel?.lng || 35.0;
-  const boundaries = parcel?.boundaries || [];
+  const boundaries = useMemo(() => parcel?.boundaries || [], [parcel?.boundaries]);
 
 
   // 1. Load Leaflet script & CSS once
@@ -140,7 +140,7 @@ export default function CustomFieldVisualMap({
         mapInstanceRef.current = null;
       }
     };
-  }, [isLeafletLoaded, lat, lng, isDarkMode]);
+  }, [isLeafletLoaded, lat, lng, isDarkMode, boundaries, brandGreenColors]);
 
   return (
     <div className="w-full h-[180px] bg-slate-50 dark:bg-slate-900 rounded-2xl relative overflow-hidden border border-emerald-500/20 dark:border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.06)] dark:shadow-[0_0_15px_rgba(16,185,129,0.08)]">

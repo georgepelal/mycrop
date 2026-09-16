@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { ArrowLeft, Loader2, ThermometerSnowflake, FileJson, Info, AlertTriangle, Droplets, MapPin } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import { useSettings } from "../contexts/SettingsContext";
+import { ArrowLeft, Loader2, ThermometerSnowflake, Info, AlertTriangle } from "lucide-react";
+import { useSettings } from "../contexts/useSettings";
 import LocationSearch from "../components/LocationSearch";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend, ComposedChart, Bar
@@ -26,13 +25,12 @@ interface FrostFreezeData {
 }
 
 export default function FrostFreezeRisk({ onNavigate }: FrostFreezeRiskProps) {
-  const { t } = useTranslation();
   const { tempUnit } = useSettings();
   
   const [data, setData] = useState<FrostFreezeData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [locationName, setLocationName] = useState("");
+  const [, setLocationName] = useState("");
   const [showRawJSON, setShowRawJSON] = useState(false);
 
   const fetchData = async (lat: number, lng: number, name: string) => {

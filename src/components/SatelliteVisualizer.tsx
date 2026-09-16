@@ -175,7 +175,7 @@ export default function SatelliteVisualizer({
           // NDVI Biomass Layer: bright lush green for heavy plants, yellow-red for barren/dry patches
           // Blend noise around the specified NDVI input
           const localNdvi = Math.max(0.01, Math.min(0.99, ndviValue + (noiseValue - 0.5) * 0.25));
-          let color = "";
+          let color: string;
           if (localNdvi < 0.2) {
             color = `rgb(${210 - localNdvi * 100}, ${80 + localNdvi * 50}, 50)`; // Red-orange drought
           } else if (localNdvi < 0.45) {
@@ -190,7 +190,7 @@ export default function SatelliteVisualizer({
         } else if (mode === "NDWI") {
           // NDWI Water Stress Layer: shows irrigation levels/wetness. Vibrant electric blue for damp spots, orange for dry spots
           const localNdwi = Math.max(0.01, Math.min(0.99, ndwiValue + (noiseValue - 0.5) * 0.3));
-          let color = "";
+          let color: string;
           if (localNdwi < 0.25) {
             color = `rgb(224, 130, 68)`; // Dry brown-orange
           } else if (localNdwi < 0.45) {
@@ -271,7 +271,7 @@ export default function SatelliteVisualizer({
       ctx.restore();
 
       // Plot corner vertex markers
-      boundary.forEach((v, idx) => {
+      boundary.forEach((v) => {
         const p = pToPx(v);
         ctx.fillStyle = "#ffffff";
         ctx.strokeStyle = "#16a34a";

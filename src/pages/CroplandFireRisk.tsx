@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, Loader2, Flame, Wind, Droplets, Calendar, Info, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Loader2, Flame, Wind, Droplets, Calendar, Info } from "lucide-react";
 import LocationSearch from "../components/LocationSearch";
 
 interface CroplandFireRiskProps {
@@ -23,7 +23,7 @@ export default function CroplandFireRisk({ onNavigate }: CroplandFireRiskProps) 
   const [data, setData] = useState<FireRiskData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [locationName, setLocationName] = useState("");
+  const [, setLocationName] = useState("");
   const [showRawJSON, setShowRawJSON] = useState(false);
   const [annualPrecip, setAnnualPrecip] = useState<number>(850);
 

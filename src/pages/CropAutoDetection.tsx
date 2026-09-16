@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, Loader2, Scan, CheckCircle2, AlertTriangle, Info, Sprout } from "lucide-react";
+import { ArrowLeft, Loader2, Scan, CheckCircle2, Info, Sprout } from "lucide-react";
 import LocationSearch from "../components/LocationSearch";
 
 interface CropAutoDetectionProps {
@@ -16,7 +16,7 @@ export default function CropAutoDetection({ onNavigate }: CropAutoDetectionProps
   const [data, setData] = useState<CropDetectionData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [locationName, setLocationName] = useState("");
+  const [, setLocationName] = useState("");
   const [showRawJSON, setShowRawJSON] = useState(false);
 
   const fetchData = async (lat: number, lng: number, name: string) => {

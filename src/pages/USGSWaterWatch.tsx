@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, Loader2, Gauge, Waves, Info, Network, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Loader2, Gauge, Waves, Info, Network } from "lucide-react";
 import LocationSearch from "../components/LocationSearch";
 
 interface USGSWaterWatchProps {
@@ -28,7 +28,7 @@ export default function USGSWaterWatch({ onNavigate }: USGSWaterWatchProps) {
   const [data, setData] = useState<USGSData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [locationName, setLocationName] = useState("");
+  const [, setLocationName] = useState("");
   const [showRawJSON, setShowRawJSON] = useState(false);
 
   const fetchData = async (lat: number, lng: number, name: string) => {

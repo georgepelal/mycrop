@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowLeft, Loader2, Compass, SunDim, Radio, ShieldAlert, Cpu, CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react";
+import { ArrowLeft, Loader2, Compass, SunDim, Radio, ShieldAlert, Cpu, AlertTriangle, RefreshCw } from "lucide-react";
 
 interface SpaceWeatherScale {
   radiationStorms: number;

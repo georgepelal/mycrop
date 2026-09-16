@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, Loader2, Bug, Trees, Flower2, Bird, ShieldAlert, Hexagon, Sprout } from "lucide-react";
+import { ArrowLeft, Loader2, Bug, Trees, Flower2, Bird, Hexagon, Sprout } from "lucide-react";
 import LocationSearch from "../components/LocationSearch";
 
 interface LocalBiodiversityProps {
@@ -43,7 +43,7 @@ export default function LocalBiodiversity({ onNavigate }: LocalBiodiversityProps
   const [data, setData] = useState<BiodiversityData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [locationName, setLocationName] = useState("");
+  const [, setLocationName] = useState("");
   const [showRawJSON, setShowRawJSON] = useState(false);
 
   const fetchData = async (lat: number, lng: number, name: string) => {

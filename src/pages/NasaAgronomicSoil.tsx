@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Parcel } from "../types";
-import { Loader2, MapPin, Info, Droplets, ThermometerSun, Calendar as CalendarIcon, Waves, ArrowLeft } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend, ReferenceLine } from "recharts";
+import { Loader2, MapPin, Info, ThermometerSun, Calendar as CalendarIcon, Waves, ArrowLeft } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from "recharts";
 import { format, subDays, parse } from "date-fns";
 import { EarthIslandVisualizer } from "../components/EarthIslandVisualizer";
 
@@ -20,9 +20,12 @@ const getMoistureBlockColor = (moisture: number) => {
   return "bg-[#d6d3d1] border-t-[#f5f5f4] border-l-[#f5f5f4] border-b-[#a8a29e] border-r-[#a8a29e]";
 };
 
-export default function NasaAgronomicSoil({ parcels, activeParcelId, onSelectParcel, onNavigate }: NasaAgronomicSoilProps) {
+export default function NasaAgronomicSoil({ parcels, activeParcelId, onNavigate }: NasaAgronomicSoilProps) {
   const activeParcel = parcels?.find(p => p.id === activeParcelId) || parcels?.[0];
-  const coords = activeParcel ? { lat: activeParcel.lat || activeParcel.latitude, lng: activeParcel.lng || activeParcel.longitude } : null;
+  const coords = useMemo(
+    () => activeParcel ? { lat: activeParcel.lat || activeParcel.latitude, lng: activeParcel.lng || activeParcel.longitude } : null,
+    [activeParcel]
+  );
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +90,7 @@ export default function NasaAgronomicSoil({ parcels, activeParcelId, onSelectPar
     }
 
     fetchData();
-  }, [coords?.lat, coords?.lng, daysBack]);
+  }, [coords, daysBack]);
 
   if (!activeParcel) {
     return (

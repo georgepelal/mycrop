@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { ArrowLeft, Loader2, ThermometerSun, FileJson, Info, Leaf, Sprout, Clock } from "lucide-react";
+import { ArrowLeft, Loader2, ThermometerSun, Info, Leaf, Sprout, Clock } from "lucide-react";
 import LocationSearch from "../components/LocationSearch";
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend, ComposedChart, Bar, BarChart
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend, Bar, BarChart
 } from "recharts";
 
 interface GrowingDegreeDaysProps {

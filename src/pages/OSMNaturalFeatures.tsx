@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, Loader2, Map as MapIcon, Trees, Droplets, MapPin, Info, Compass, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Loader2, Map as MapIcon, Trees, Droplets, MapPin, Info, Compass } from "lucide-react";
 import LocationSearch from "../components/LocationSearch";
 
 interface OSMNaturalProps {
@@ -27,7 +27,7 @@ export default function OSMNaturalFeatures({ onNavigate }: OSMNaturalProps) {
   const [data, setData] = useState<OSMData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [locationName, setLocationName] = useState("");
+  const [, setLocationName] = useState("");
   const [showRawJSON, setShowRawJSON] = useState(false);
 
   const fetchData = async (lat: number, lng: number, name: string) => {

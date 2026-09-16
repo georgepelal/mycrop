@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, Loader2, Activity, MapPin, Layers, Info, Navigation, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Loader2, Activity, MapPin, Layers, Info, Navigation } from "lucide-react";
 import LocationSearch from "../components/LocationSearch";
 
 interface USGSSeismicProps {
@@ -28,7 +28,7 @@ export default function USGSSeismicMaps({ onNavigate }: USGSSeismicProps) {
   const [data, setData] = useState<SeismicData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [locationName, setLocationName] = useState("");
+  const [, setLocationName] = useState("");
   const [showRawJSON, setShowRawJSON] = useState(false);
 
   const fetchData = async (lat: number, lng: number, name: string) => {

@@ -33,7 +33,7 @@ export default function OpenEpiSoilQuality({ onNavigate }: OpenEpiSoilQualityPro
   const [data, setData] = useState<OpenEpiData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [locationName, setLocationName] = useState("");
+  const [, setLocationName] = useState("");
   const [showRawJSON, setShowRawJSON] = useState(false);
 
   const fetchData = async (lat: number, lng: number, name: string) => {

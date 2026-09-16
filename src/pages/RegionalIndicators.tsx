@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, Loader2, Globe2, Sun, MapPin, Activity, Building, Leaf, Info, Factory, ActivitySquare } from "lucide-react";
+import { ArrowLeft, Loader2, Globe2, Sun, Building, Leaf, Info, Factory, ActivitySquare } from "lucide-react";
 import LocationSearch from "../components/LocationSearch";
 
 interface RegionalIndicatorsProps {
@@ -37,7 +37,7 @@ export default function RegionalIndicators({ onNavigate }: RegionalIndicatorsPro
   const [data, setData] = useState<IndicatorData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [locationName, setLocationName] = useState("");
+  const [, setLocationName] = useState("");
   const [showRawJSON, setShowRawJSON] = useState(false);
 
   const fetchData = async (lat: number, lng: number, name: string) => {

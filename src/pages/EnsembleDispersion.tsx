@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSettings } from "../contexts/SettingsContext";
+import { useSettings } from "../contexts/useSettings";
 import { ArrowLeft, Loader2, Info, CloudRain, Thermometer } from "lucide-react";
-import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
+import { Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   ComposedChart, Bar, Line, Legend
 } from "recharts";
 import LocationSearch from "../components/LocationSearch";
@@ -59,7 +58,7 @@ export default function EnsembleDispersion({ onNavigate }: EnsembleDispersionPro
   };
 
   // Unit preferences state from global settings
-  const { tempUnit, setTempUnit, rainUnit, setRainUnit } = useSettings();
+  const { tempUnit, rainUnit } = useSettings();
 
   // Forecast date period segment state
   const [datePeriod, setDatePeriod] = useState<"all" | "short" | "medium" | "extended">("all");
@@ -156,7 +155,6 @@ export default function EnsembleDispersion({ onNavigate }: EnsembleDispersionPro
     let maxDivergence = 0;
     let divergenceDay = "";
     let highestRainChance = 0;
-    let avgModelConfidence = 100;
 
     temporalFilteredRecords.forEach((item) => {
       const spread = item.tempHigh - item.tempLow;
@@ -171,7 +169,7 @@ export default function EnsembleDispersion({ onNavigate }: EnsembleDispersionPro
 
     // Simple scale: larger spreads subtract from confidence
     const meanSpread = temporalFilteredRecords.reduce((acc, c) => acc + (c.tempHigh - c.tempLow), 0) / temporalFilteredRecords.length;
-    avgModelConfidence = Math.max(20, Math.round(100 - (meanSpread * 4.5)));
+    const avgModelConfidence = Math.max(20, Math.round(100 - (meanSpread * 4.5)));
 
     return {
       maxDivergence: maxDivergence.toFixed(1),

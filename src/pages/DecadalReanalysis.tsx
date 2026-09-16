@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSettings } from "../contexts/SettingsContext";
+import { useSettings } from "../contexts/useSettings";
 import { ArrowLeft, Loader2, Info, Thermometer, CloudRain, Sprout } from "lucide-react";
 import { 
   LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend
@@ -60,7 +60,7 @@ export default function DecadalReanalysis({ onNavigate }: DecadalReanalysisProps
   };
 
   // Unit preferences state from global settings
-  const { tempUnit, setTempUnit, rainUnit, setRainUnit } = useSettings();
+  const { tempUnit, rainUnit } = useSettings();
 
   // Decade selection filter: list of decades to include
   const [selectedDecades, setSelectedDecades] = useState<string[]>(["1980s", "1990s", "2000s", "2010s", "2020s"]);

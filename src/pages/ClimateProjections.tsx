@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSettings } from "../contexts/SettingsContext";
+import { useSettings } from "../contexts/useSettings";
 import { ArrowLeft, Loader2, Info, Thermometer, CloudRain, ShieldCheck } from "lucide-react";
 import { 
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend
@@ -61,7 +61,7 @@ export default function ClimateProjections({ onNavigate }: ClimateProjectionsPro
   };
 
   // Unit preferences state from global settings
-  const { tempUnit, setTempUnit, rainUnit, setRainUnit } = useSettings();
+  const { tempUnit, rainUnit } = useSettings();
   
   // Date period state
   const [seasonFilter, setSeasonFilter] = useState<"all" | "growing" | "winter">("all");

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, Loader2, Snowflake, MapPin, Gauge, Info, AlertTriangle, Apple } from "lucide-react";
+import { ArrowLeft, Loader2, Snowflake, MapPin, Gauge, Info, Apple } from "lucide-react";
 import LocationSearch from "../components/LocationSearch";
 
 interface ChillingHoursProps {

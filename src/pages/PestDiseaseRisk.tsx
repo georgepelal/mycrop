@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, Loader2, Bug, ShieldAlert, Activity, Info, Droplets } from "lucide-react";
+import { ArrowLeft, Loader2, Bug, ShieldAlert, Activity, Info } from "lucide-react";
 import LocationSearch from "../components/LocationSearch";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend
@@ -29,7 +29,7 @@ export default function PestDiseaseRisk({ onNavigate }: PestDiseaseRiskProps) {
   const [data, setData] = useState<PestData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [locationName, setLocationName] = useState("");
+  const [, setLocationName] = useState("");
   const [showRawJSON, setShowRawJSON] = useState(false);
 
   const fetchData = async (lat: number, lng: number, name: string) => {

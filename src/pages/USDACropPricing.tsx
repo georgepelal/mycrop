@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, Loader2, DollarSign, TrendingUp, Info, Activity, ShieldCheck, Factory } from "lucide-react";
+import { ArrowLeft, Loader2, DollarSign, TrendingUp, Info, Activity, Factory } from "lucide-react";
 
 interface USDAPricingProps {
   onNavigate: (page: string) => void;

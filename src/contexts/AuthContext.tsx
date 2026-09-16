@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { 
+import React, { useState, useEffect } from "react";
+import {
   User as FirebaseUser,
   onAuthStateChanged,
   signInAnonymously,
@@ -11,19 +11,7 @@ import {
   updateProfile
 } from "firebase/auth";
 import { auth, isMockFirebase } from "../lib/firebase";
-
-interface AuthContextType {
-  user: FirebaseUser | null;
-  loading: boolean;
-  login: () => Promise<void>;
-  loginWithEmail: (email: string, pass: string) => Promise<void>;
-  signUpWithEmail: (email: string, pass: string, name?: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
-  logout: () => Promise<void>;
-  isMock: boolean;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext } from "./authContextValue";
 
 // Fallback profile only if mock firebase config is used
 const mockUser = {
@@ -129,12 +117,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used inside AuthProvider");
-  }
-  return context;
 };

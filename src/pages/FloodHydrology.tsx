@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, Loader2, Waves, AlertTriangle, Droplets, Info, Droplet } from "lucide-react";
+import { ArrowLeft, Loader2, Waves, AlertTriangle, Info, Droplet } from "lucide-react";
 import LocationSearch from "../components/LocationSearch";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend
@@ -25,7 +25,7 @@ export default function FloodHydrology({ onNavigate }: FloodHydrologyProps) {
   const [data, setData] = useState<FloodData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [locationName, setLocationName] = useState("");
+  const [, setLocationName] = useState("");
   const [showRawJSON, setShowRawJSON] = useState(false);
 
   const fetchData = async (lat: number, lng: number, name: string) => {

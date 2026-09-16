@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Flag, AlertCircle, MapPin as MapPinIcon, Loader2 } from "lucide-react";
+import { Flag, AlertCircle, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../contexts/AuthContext";
 
 export default function RegionalCountrySovereign() {
   const { t } = useTranslation();
-  const { user } = useAuth();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +15,7 @@ export default function RegionalCountrySovereign() {
         (position) => {
           setCoords({ lat: position.coords.latitude, lng: position.coords.longitude });
         },
-        (err) => {
+        () => {
           console.warn("Geolocation denied or failed, using defaults");
         }
       );

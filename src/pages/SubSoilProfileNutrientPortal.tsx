@@ -2,16 +2,9 @@ import React, { useState, useMemo } from "react";
 import { 
   Sprout, 
   Layers, 
-  Droplets, 
-  Compass, 
   AlertTriangle, 
-  CheckCircle2, 
   Calculator, 
-  LineChart as ChartIcon, 
-  Info, 
   Zap, 
-  ChevronRight, 
-  TrendingUp, 
   Gauge, 
   Workflow,
   Sparkles,
@@ -54,9 +47,6 @@ export default function SubSoilProfileNutrientPortal({
 
   // Selected depth layer state
   const [selectedLayerId, setSelectedLayerId] = useState<string>("root-zone");
-  
-  // Selected sub-portal active tab state
-  const [activeTab, setActiveTab] = useState<"map" | "stratigraphy" | "calculator">("map");
   
   // Fertilizer recommendation calculator inputs
   const [targetYield, setTargetYield] = useState<number>(10.5); // tonnes/ha
@@ -258,8 +248,6 @@ export default function SubSoilProfileNutrientPortal({
     const netP = Math.max(0, rawP - creditP);
     const netK = Math.max(0, rawK - creditK);
 
-    // Calculate specific recommended fertilizer weight and composition
-    let recommendedBagWeight = 0;
     let mainNutrient = "";
     let secondaryNutrient = "";
     let applicationRate = 0;
@@ -271,24 +259,26 @@ export default function SubSoilProfileNutrientPortal({
         mainNutrient = `${netN} kg/ha Nitrogen (N)`;
         details = "Provides rapid, high-concentration nitrogen release. Best applied in split doses to prevent subsoil leaching and volatilization.";
         break;
-      case "dap": // 18-46-0
+      case "dap": { // 18-46-0
         applicationRate = Math.round(netP / 0.46);
         const contributedN = Math.round(applicationRate * 0.18);
         mainNutrient = `${netP} kg/ha Phosphorus (P₂O₅)`;
         secondaryNutrient = `Also provides ${contributedN} kg/ha Starter Nitrogen (N)`;
         details = "Excellent dual-nutrient source. Apply near root zones at planting to accelerate subsoil crown root establishment.";
         break;
+      }
       case "mop": // 0-0-60
         applicationRate = Math.round(netK / 0.60);
         mainNutrient = `${netK} kg/ha Potassium (K₂O)`;
         details = "High density potassium source. Boosts cell-wall thickness, turgor pressure, drought resistance, and subsoil frost resilience.";
         break;
-      case "triple-15": // 15-15-15
+      case "triple-15": { // 15-15-15
         const maxDemand = Math.max(netN, netP, netK);
         applicationRate = Math.round(maxDemand / 0.15);
         mainNutrient = `Balanced N-P-K coverage`;
         details = "Perfect for standard pre-planting maintenance. Distributes macro-nutrients uniformly across all crop life stages.";
         break;
+      }
       case "organic":
         applicationRate = Math.round(netN / 0.03); // 3% N compost
         mainNutrient = `Humus & Organic Matter Enricher`;

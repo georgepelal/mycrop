@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, Loader2, Sun, MapPin, Zap, Info, AlertTriangle, TrendingUp } from "lucide-react";
+import { ArrowLeft, Loader2, Sun, MapPin, Zap, Info, TrendingUp } from "lucide-react";
 import LocationSearch from "../components/LocationSearch";
 
 interface SolarEnergyProps {

@@ -1,24 +1,14 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSettings } from "../contexts/SettingsContext";
+import { useSettings } from "../contexts/useSettings";
 import { 
-  Settings, 
-  Map, 
   Cpu, 
-  Layers, 
-  Compass, 
-  FolderLock, 
-  Grid, 
-  MonitorPlay,
+  FolderLock,
   Check,
-  ToggleLeft,
   RefreshCw,
   CheckSquare,
   Square,
-  Play,
-  XCircle,
   ShieldCheck,
-  Zap,
   Lock
 } from "lucide-react";
 

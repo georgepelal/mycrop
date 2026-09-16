@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, Loader2, Orbit, MapPin, Compass, Eye, ShieldCheck, RefreshCw, AlertCircle, Info } from "lucide-react";
+import { ArrowLeft, Loader2, Orbit, MapPin, Compass, Eye, ShieldCheck, RefreshCw, Info } from "lucide-react";
 import LocationSearch from "../components/LocationSearch";
 
 interface IssSatelliteProps {

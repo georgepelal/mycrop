@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, Loader2, Sun, Wind, CloudFog, FileJson, Info, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Loader2, Sun, Wind, CloudFog, Info, AlertTriangle } from "lucide-react";
 import LocationSearch from "../components/LocationSearch";
 
 interface UvBoundaryLayerProps {
@@ -38,7 +38,7 @@ export default function UvAndBoundaryLayer({ onNavigate }: UvBoundaryLayerProps)
   const [data, setData] = useState<CombinedData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [locationName, setLocationName] = useState("");
+  const [, setLocationName] = useState("");
   const [showRawJSON, setShowRawJSON] = useState(false);
 
   const fetchData = async (lat: number, lng: number, name: string) => {

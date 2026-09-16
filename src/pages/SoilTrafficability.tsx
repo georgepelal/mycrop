@@ -24,7 +24,7 @@ export default function SoilTrafficability({ onNavigate }: SoilTrafficabilityPro
   const [data, setData] = useState<SoilTrafficabilityData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [locationName, setLocationName] = useState("");
+  const [, setLocationName] = useState("");
   const [showRawJSON, setShowRawJSON] = useState(false);
 
   const fetchData = async (lat: number, lng: number, name: string) => {

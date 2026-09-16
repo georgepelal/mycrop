@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, Loader2, Droplets, MapPin, BarChart3, Info, AlertTriangle, LeafyGreen } from "lucide-react";
+import { ArrowLeft, Loader2, Droplets, MapPin, BarChart3, Info, LeafyGreen } from "lucide-react";
 import LocationSearch from "../components/LocationSearch";
 
 interface CropWaterEfficiencyProps {

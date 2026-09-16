@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSettings } from "../contexts/SettingsContext";
-import { ArrowLeft, Loader2, Info, Wind, CloudSun, ShieldCheck, BarChart4, Compass } from "lucide-react";
+import { useSettings } from "../contexts/useSettings";
+import { ArrowLeft, Loader2, Wind, CloudSun, ShieldCheck, BarChart4, Compass } from "lucide-react";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell
 } from "recharts";
@@ -35,7 +35,7 @@ export default function EnvironmentalTelemetry({ onNavigate }: EnvironmentalTele
   const [data, setData] = useState<TelemetryData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [locationName, setLocationName] = useState("");
+  const [, setLocationName] = useState("");
 
   // Visual filter state
   const [visibleGasses, setVisibleGasses] = useState({
@@ -47,7 +47,7 @@ export default function EnvironmentalTelemetry({ onNavigate }: EnvironmentalTele
   });
 
   // Global unit settings
-  const { elevUnit, setElevUnit, pressUnit, setPressUnit } = useSettings();
+  const { elevUnit, pressUnit } = useSettings();
 
   // Raw JSON display state
   const [showRawJSON, setShowRawJSON] = useState(false);

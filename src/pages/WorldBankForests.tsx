@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, Loader2, Trees, MapPin, Percent, Info, AlertTriangle, Leaf } from "lucide-react";
+import { ArrowLeft, Loader2, Trees, MapPin, Percent, Info, Leaf } from "lucide-react";
 import LocationSearch from "../components/LocationSearch";
 
 interface WorldBankForestsProps {
@@ -20,7 +20,7 @@ export default function WorldBankForests({ onNavigate }: WorldBankForestsProps) 
   const [data, setData] = useState<ForestData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [locationName, setLocationName] = useState("");
+  const [, setLocationName] = useState("");
   const [showRawJSON, setShowRawJSON] = useState(false);
 
   const fetchData = async (lat: number, lng: number, name: string) => {

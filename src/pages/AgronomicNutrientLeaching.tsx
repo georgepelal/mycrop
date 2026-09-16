@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, Loader2, TestTube2, AlertTriangle, Droplet, Info, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Loader2, TestTube2, Info, ShieldAlert } from "lucide-react";
 import LocationSearch from "../components/LocationSearch";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend
@@ -26,7 +26,7 @@ export default function AgronomicNutrientLeaching({ onNavigate }: AgronomicNutri
   const [data, setData] = useState<LeachingData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [locationName, setLocationName] = useState("");
+  const [, setLocationName] = useState("");
   const [showRawJSON, setShowRawJSON] = useState(false);
 
   const fetchData = async (lat: number, lng: number, name: string) => {

@@ -6,22 +6,13 @@ import {
   Pin,
 } from "@vis.gl/react-google-maps";
 import { 
-  MapPin, 
   Compass, 
   Search, 
-  Layers, 
   Info,
   Maximize2,
   Minimize2,
   CheckCircle,
-  HelpCircle,
-  ArrowUp,
-  ArrowDown,
-  ArrowLeft,
-  ArrowRight,
-  Crosshair,
   RefreshCw,
-  Sliders,
   Undo,
   Trash2,
   Gauge
@@ -37,7 +28,7 @@ const API_KEY =
 const hasValidKey = Boolean(API_KEY) && API_KEY !== "YOUR_API_KEY" && API_KEY.trim().length > 10;
 
 // Shoelace Area Calculation algorithm in Hectares
-export function calculatePolygonAreaHa(vertices: { lat: number; lng: number }[]): number {
+function calculatePolygonAreaHa(vertices: { lat: number; lng: number }[]): number {
   if (vertices.length < 3) return 0;
   
   const refLat = vertices[0].lat;
@@ -63,7 +54,7 @@ export function calculatePolygonAreaHa(vertices: { lat: number; lng: number }[])
 }
 
 // Deterministic physical attributes based on location
-export function getDeterministicSoilMetrics(lat: number, lng: number) {
+function getDeterministicSoilMetrics(lat: number, lng: number) {
   const seed = Math.abs(Math.sin(lat * 12.9898 + lng * 78.233) * 43758.5453);
   
   const soilTypes = ["Loamy", "Silt", "Clayey", "Sandy"];
@@ -91,7 +82,7 @@ export function getDeterministicSoilMetrics(lat: number, lng: number) {
   };
 }
 
-export function calculatePolygonPerimeterMeters(vertices: { lat: number; lng: number }[]): number {
+function calculatePolygonPerimeterMeters(vertices: { lat: number; lng: number }[]): number {
   if (vertices.length < 2) return 0;
   
   let totalDist = 0;
@@ -178,17 +169,21 @@ export default function FieldMapPicker({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Sync state if initial values shift
+  // Sync state if initial values shift. Deliberately omits lat/lng: this only
+  // reacts to the incoming prop changing, not to the user panning the map --
+  // depending on lat/lng too would snap the map back after every manual pan.
   useEffect(() => {
     if (initialLat !== undefined && initialLat !== lat) {
       setLat(initialLat);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialLat]);
 
   useEffect(() => {
     if (initialLng !== undefined && initialLng !== lng) {
       setLng(initialLng);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialLng]);
 
   useEffect(() => {
@@ -390,32 +385,6 @@ export default function FieldMapPicker({
       const clickLat = Math.atan(Math.sinh(Math.PI * normY)) * 180 / Math.PI;
 
       handleAddVertex(clickLat, clickLng);
-    }
-  };
-
-  const handleNudge = (direction: "N" | "S" | "E" | "W", multiplier = 1) => {
-    const baseStep = Math.pow(2, 12 - zoomLevel) * 0.001 * multiplier;
-    let nextLat = lat;
-    let nextLng = lng;
-
-    switch (direction) {
-      case "N": nextLat += baseStep; break;
-      case "S": nextLat -= baseStep; break;
-      case "E": nextLng += baseStep * 1.2; break;
-      case "W": nextLng -= baseStep * 1.2; break;
-    }
-
-    setLat(nextLat);
-    setLng(nextLng);
-    
-    // Shift drawn points as well to pan the drawn area
-    if (boundary.length > 0) {
-      const panned = boundary.map(b => ({
-        lat: b.lat + (nextLat - lat),
-        lng: b.lng + (nextLng - lng)
-      }));
-      setBoundary(panned);
-      syncWithParent(panned);
     }
   };
 
@@ -735,10 +704,11 @@ export default function FieldMapPicker({
                 {/* Subtile grid overlay to retain agricultural grid appearance */}
                 <div 
                   className="absolute inset-0 opacity-10 pointer-events-none z-5 transition-all duration-300"
-                  style={{ 
-                    backgroundImage: "linear-gradient(to right, rgba(255,255,255,0.15) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.15) 1px, transparent 1px)", 
+                  style={{
+                    backgroundImage: "linear-gradient(to right, rgba(255,255,255,0.15) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.15) 1px, transparent 1px)",
                     backgroundSize: "64px 64px",
-                  }} 
+                    backgroundPosition: `${gridX}px ${gridY}px`,
+                  }}
                 />
 
                 {/* Drawn SVG overlay representing physical fence */}

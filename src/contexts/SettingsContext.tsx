@@ -1,38 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { Settings, SettingsContext } from "./settingsContextValue";
 
-export interface Settings {
-  tempUnit: "C" | "F";
-  rainUnit: "mm" | "inch";
-  elevUnit: "m" | "ft";
-  pressUnit: "hPa" | "psi" | "atm" | "mmHg";
-  metricScale: boolean;
-  highContrast: boolean;
-  moistureAlerts: boolean;
-  copernicusFeed: boolean;
-  theme: "light" | "dark";
-}
-
-interface SettingsContextType extends Settings {
-  setTempUnit: (unit: "C" | "F") => void;
-  setRainUnit: (unit: "mm" | "inch") => void;
-  setElevUnit: (unit: "m" | "ft") => void;
-  setPressUnit: (unit: "hPa" | "psi" | "atm" | "mmHg") => void;
-  setMetricScale: (val: boolean) => void;
-  setHighContrast: (val: boolean) => void;
-  setMoistureAlerts: (val: boolean) => void;
-  setCopernicusFeed: (val: boolean) => void;
-  setTheme: (theme: "light" | "dark") => void;
-  
-  // High-performance conversions & formats
-  formatArea: (hectares: number) => string;
-  formatYield: (tHa: number) => string;
-  convertTemp: (celsius: number) => number;
-  convertRain: (mm: number) => number;
-  convertElev: (m: number) => number;
-  convertPress: (hPa: number) => number;
-}
-
-const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
+export type { Settings };
 
 const LOCAL_STORAGE_KEY = "mycrop_global_settings";
 
@@ -178,12 +147,4 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       </div>
     </SettingsContext.Provider>
   );
-};
-
-export const useSettings = () => {
-  const context = useContext(SettingsContext);
-  if (!context) {
-    throw new Error("useSettings must be used inside SettingsProvider");
-  }
-  return context;
 };

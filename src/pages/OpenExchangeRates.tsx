@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowLeft, Loader2, Coins, Landmark, LineChart, Info, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Loader2, Coins, Landmark, LineChart, Info } from "lucide-react";
 
 interface OpenExchangeRatesProps {
   onNavigate: (page: string) => void;

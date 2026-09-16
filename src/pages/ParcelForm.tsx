@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Coordinate, CROP_PRESETS as CROP_PRESETS_MAP, Crop } from "../types";
 import { getCropsCatalog } from "../lib/db";
-import { ArrowLeft, Check, Droplet, Search, Trash2, Undo, MapPin, Minimize2, Maximize2 } from "lucide-react";
+import { ArrowLeft, Check, Trash2, Undo, MapPin } from "lucide-react";
 import LocationSearch from "../components/LocationSearch";
 
 interface ParcelFormProps {
@@ -44,9 +44,9 @@ function calculatePolygonAreaHa(vertices: { lat: number; lng: number }[]): numbe
 export default function ParcelForm({ onAddParcel, onNavigateBack }: ParcelFormProps) {
   const [name, setName] = useState("");
   const [cropType, setCropType] = useState(CROP_PRESETS[0]);
-  const [soilType, setSoilType] = useState(SOIL_PRESETS[0]);
+  const [soilType] = useState(SOIL_PRESETS[0]);
   const [area, setArea] = useState(0);
-  const [soilMoisture, setSoilMoisture] = useState(38);
+  const [soilMoisture] = useState(38);
   const [lat, setLat] = useState(40.5283);
   const [lng, setLng] = useState(22.1283);
 
@@ -67,10 +67,10 @@ export default function ParcelForm({ onAddParcel, onNavigateBack }: ParcelFormPr
   }, []);
 
   // Environmental states
-  const [soilPH, setSoilPH] = useState(6.4);
-  const [nitrogen, setNitrogen] = useState("Optimal");
-  const [ndviValue, setNdviValue] = useState(0.72);
-  const [ndwiValue, setNdwiValue] = useState(0.42);
+  const [soilPH] = useState(6.4);
+  const [nitrogen] = useState("Optimal");
+  const [ndviValue] = useState(0.72);
+  const [ndwiValue] = useState(0.42);
 
   // Simulated drawn vertices
   const [vertices, setVertices] = useState<Coordinate[]>([]);
@@ -143,6 +143,9 @@ export default function ParcelForm({ onAddParcel, onNavigateBack }: ParcelFormPr
         mapInstanceRef.current = null;
       }
     };
+    // lat/lng seed the map's initial center only; re-centering after the map
+    // exists is handled separately (see handleSelectLocationFromSearch).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLeafletLoaded]); // Run once when loaded
 
   // Update Drawing on Map
@@ -201,7 +204,7 @@ export default function ParcelForm({ onAddParcel, onNavigateBack }: ParcelFormPr
     }
   }, [vertices, isLeafletLoaded]);
 
-  const handleSelectLocationFromSearch = (newLat: number, newLng: number, selectedName: string) => {
+  const handleSelectLocationFromSearch = (newLat: number, newLng: number) => {
     setLat(newLat);
     setLng(newLng);
     if (mapInstanceRef.current) {

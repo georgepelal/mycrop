@@ -1,7 +1,8 @@
 import { EarthIslandVisualizer } from "../components/EarthIslandVisualizer";
+import { useNavigate } from "react-router-dom";
+import { ToolProps } from "../tools/registry";
 import React, { useState, useEffect } from "react";
 import { Layers, AlertCircle, Loader2, Sprout, Map as MapIcon, Activity, FlaskConical, Weight, ArrowLeft, MapPin } from "lucide-react";
-import { Parcel } from "../types";
 
 import { getCachedSoilData, setCachedSoilData } from "../utils/soilCache";
 
@@ -41,32 +42,31 @@ interface SoilData {
   bdod: SoilProperty;
 }
 
-interface SoilCompositionTextureProps {
-  parcels: Parcel[];
-  activeParcelId: string | null;
-  onSelectParcel: (id: string) => void;
-  onNavigate: (page: string) => void;
-}
 
-export default function SoilCompositionTexture({ parcels, activeParcelId, onSelectParcel, onNavigate }: SoilCompositionTextureProps) {
+export default function SoilCompositionTexture({ parcels, activeParcelId, onSelectParcel, location }: ToolProps) {
+  const navigate = useNavigate();
   const [data, setData] = useState<SoilData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const activeParcel = parcels.find((p) => p.id === activeParcelId) || parcels[0];
+  const activeParcel = parcels?.find((p) => p.id === activeParcelId) || parcels?.[0];
   
   const [coords, setCoords] = useState<{lat: number, lng: number} | null>(null);
 
 
-  // Initialize coords to center of parcel on parcel change
+  // The selected field's centre when there is one, otherwise wherever the
+  // visitor has chosen. Never an invented pair of coordinates.
   useEffect(() => {
-    if (activeParcel) {
-      setCoords({
-        lat: activeParcel.latitude || activeParcel.lat || 35,
-        lng: activeParcel.longitude || activeParcel.lng || 35
-      });
+    const parcelLat = activeParcel?.latitude ?? activeParcel?.lat;
+    const parcelLng = activeParcel?.longitude ?? activeParcel?.lng;
+    if (parcelLat !== undefined && parcelLng !== undefined) {
+      setCoords({ lat: parcelLat, lng: parcelLng });
+    } else if (location) {
+      setCoords({ lat: location.lat, lng: location.lng });
+    } else {
+      setCoords(null);
     }
-  }, [activeParcel]);
+  }, [activeParcel, location]);
 
   useEffect(() => {
     async function fetchData() {
@@ -81,12 +81,18 @@ export default function SoilCompositionTexture({ parcels, activeParcelId, onSele
       setLoading(true);
       setError(null);
       try {
-        const url = `https://rest.isric.org/soilgrids/v2.0/properties/query?lon=${fetchLng}&lat=${fetchLat}&property=clay&property=sand&property=silt&property=soc&property=phh2o&property=bdod&depth=0-5cm&depth=5-15cm&depth=15-30cm&depth=30-60cm&depth=60-100cm&depth=100-200cm&value=mean`;
+        const url = "/api/soilgrids-properties";
+        // Through the server so it carries provenance like every other call.
+        const soilRequest = {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lat: fetchLat, lng: fetchLng }),
+        };
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 6000);
         let response;
         try {
-          response = await fetch(url, { signal: controller.signal });
+          response = await fetch(url, { ...soilRequest, signal: controller.signal });
           clearTimeout(timeoutId);
         } catch(err) {
           clearTimeout(timeoutId);
@@ -163,7 +169,7 @@ export default function SoilCompositionTexture({ parcels, activeParcelId, onSele
       <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between mb-2">
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => onNavigate("field-overview")}
+            onClick={() => navigate("/tools")}
             className="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -185,15 +191,15 @@ export default function SoilCompositionTexture({ parcels, activeParcelId, onSele
       </div>
 
       {/* Parcel / Field selector bar */}
-      {parcels.length > 0 && (
+      {(parcels?.length ?? 0) > 0 && (
         <div className="flex flex-wrap gap-2 items-center bg-white p-2 rounded-xl shadow-sm border border-slate-100 mb-6">
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-2 pr-1 flex items-center gap-1">
             <MapPin className="w-3.5 h-3.5 text-slate-400" /> Field:
           </span>
-          {parcels.map((p) => (
+          {parcels?.map((p) => (
             <button
               key={p.id}
-              onClick={() => onSelectParcel(p.id)}
+              onClick={() => onSelectParcel?.(p.id)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 p.id === activeParcelId
                   ? "bg-emerald-500 text-white shadow-sm"

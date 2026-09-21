@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
 import { ArrowLeft, Loader2, Compass, SunDim, Radio, ShieldAlert, Cpu, AlertTriangle, RefreshCw } from "lucide-react";
 
@@ -14,11 +15,9 @@ interface SpaceWeatherData {
   scales: SpaceWeatherScale;
 }
 
-interface NoaaSpaceWeatherProps {
-  onNavigate: (page: string) => void;
-}
 
-export default function NoaaSpaceWeather({ onNavigate }: NoaaSpaceWeatherProps) {
+export default function NoaaSpaceWeather() {
+  const navigate = useNavigate();
   const [data, setData] = useState<SpaceWeatherData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +60,7 @@ export default function NoaaSpaceWeather({ onNavigate }: NoaaSpaceWeatherProps) 
       <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between lg:pr-8 border-b border-gray-100 pb-5">
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => onNavigate("field-overview")}
+            onClick={() => navigate("/tools")}
             className="p-2 hover:bg-slate-100 rounded-full transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />

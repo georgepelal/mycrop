@@ -1,9 +1,7 @@
+import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
 import { ArrowLeft, Loader2, Globe, AlertTriangle, Info, CloudFog } from "lucide-react";
 
-interface GreenhouseProps {
-  onNavigate: (page: string) => void;
-}
 
 interface GreenhouseData {
   isLiveGasTrends: boolean;
@@ -16,7 +14,8 @@ interface GreenhouseData {
   apiCitation: string;
 }
 
-export default function GlobalGreenhouseGas({ onNavigate }: GreenhouseProps) {
+export default function GlobalGreenhouseGas() {
+  const navigate = useNavigate();
   const [data, setData] = useState<GreenhouseData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +54,7 @@ export default function GlobalGreenhouseGas({ onNavigate }: GreenhouseProps) {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center gap-4 border-b border-transparent pb-2 lg:pr-8">
         <button 
-          onClick={() => onNavigate("field-overview")}
+          onClick={() => navigate("/tools")}
           className="p-2 hover:bg-slate-100 rounded-full transition-colors"
         >
           <ArrowLeft className="w-5 h-5 text-gray-600" />

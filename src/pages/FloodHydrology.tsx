@@ -1,3 +1,6 @@
+import { useNavigate } from "react-router-dom";
+import { ToolProps } from "../tools/registry";
+import { useFetchOnLocation } from "../tools/useFetchOnLocation";
 import React, { useState } from "react";
 import { ArrowLeft, Loader2, Waves, AlertTriangle, Info, Droplet } from "lucide-react";
 import LocationSearch from "../components/LocationSearch";
@@ -5,9 +8,6 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend
 } from "recharts";
 
-interface FloodHydrologyProps {
-  onNavigate: (page: string) => void;
-}
 
 interface FloodData {
   latitude: number;
@@ -21,7 +21,8 @@ interface FloodData {
   timestamp: string;
 }
 
-export default function FloodHydrology({ onNavigate }: FloodHydrologyProps) {
+export default function FloodHydrology({ location, setLocation }: ToolProps) {
+  const navigate = useNavigate();
   const [data, setData] = useState<FloodData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,17 +65,21 @@ export default function FloodHydrology({ onNavigate }: FloodHydrologyProps) {
     }
   };
 
-  const chartData = data?.dates.map((date, index) => ({
+  const chartData = data?.dates?.map((date, index) => ({
     date: new Date(date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }),
     "River Discharge (m³/s)": data.riverDischarge[index]
   })) || [];
+
+  // Fetches whenever the shared location changes, so a link that carries a
+  // location reproduces the data rather than an empty tool.
+  useFetchOnLocation(location, handleLocationSelect);
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between lg:pr-8">
         <div className="flex items-center gap-4 border-b border-transparent pb-2">
           <button 
-            onClick={() => onNavigate("field-overview")}
+            onClick={() => navigate("/tools")}
             className="p-2 hover:bg-slate-100 rounded-full transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -92,7 +97,8 @@ export default function FloodHydrology({ onNavigate }: FloodHydrologyProps) {
         
         <div className="w-full md:w-96">
           <LocationSearch 
-            onLocationSelect={handleLocationSelect} 
+            onLocationSelect={(lat, lng, name) => setLocation({ lat, lng, label: name })}
+            initialLocationName={location?.label ?? ""} 
             placeholder="Search anywhere..." 
           />
         </div>

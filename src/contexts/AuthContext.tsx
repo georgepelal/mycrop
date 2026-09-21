@@ -13,30 +13,16 @@ import {
 import { auth, isMockFirebase } from "../lib/firebase";
 import { AuthContext } from "./authContextValue";
 
-// Fallback profile only if mock firebase config is used
-const mockUser = {
-  uid: "mock-agronomist-george",
-  email: "georgepelal@gmail.com",
-  displayName: "George Pelal",
-  photoURL: "🌱",
-  emailVerified: true,
-  isAnonymous: false,
-  metadata: {},
-  providerData: []
-} as unknown as FirebaseUser;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // No Firebase configuration: nobody is signed in. Tools that only need a
+    // location keep working; saving fields is unavailable and says so.
     if (isMockFirebase) {
-      const cached = localStorage.getItem("mycrop_session_user");
-      if (cached === "active") {
-        setUser(mockUser);
-      } else {
-        setUser(mockUser); // Default logged in for sandbox
-      }
+      setUser(null);
       setLoading(false);
       return;
     }
@@ -51,9 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async () => {
     if (isMockFirebase) {
-      localStorage.setItem("mycrop_session_user", "active");
-      setUser(mockUser);
-      return;
+      throw new Error("Sign-in is unavailable: this deployment has no Firebase configuration.");
     }
     try {
       await signInAnonymously(auth);
@@ -64,18 +48,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithEmail = async (email: string, pass: string) => {
     if (isMockFirebase) {
-      localStorage.setItem("mycrop_session_user", "active");
-      setUser(mockUser);
-      return;
+      throw new Error("Sign-in is unavailable: this deployment has no Firebase configuration.");
     }
     await signInWithEmailAndPassword(auth, email, pass);
   };
 
   const signUpWithEmail = async (email: string, pass: string, name?: string) => {
     if (isMockFirebase) {
-      localStorage.setItem("mycrop_session_user", "active");
-      setUser(mockUser);
-      return;
+      throw new Error("Sign-in is unavailable: this deployment has no Firebase configuration.");
     }
     const credential = await createUserWithEmailAndPassword(auth, email, pass);
     if (name && credential.user) {
@@ -90,9 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithGoogle = async () => {
     if (isMockFirebase) {
-      localStorage.setItem("mycrop_session_user", "active");
-      setUser(mockUser);
-      return;
+      throw new Error("Sign-in is unavailable: this deployment has no Firebase configuration.");
     }
     try {
       const provider = new GoogleAuthProvider();
@@ -105,7 +83,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     if (isMockFirebase) {
-      localStorage.removeItem("mycrop_session_user");
       setUser(null);
       return;
     }

@@ -1,29 +1,41 @@
+import { ToolProps } from "../tools/registry";
+import NeedsLocation from "../tools/NeedsLocation";
 import React, { useState, useEffect } from "react";
 import { Sprout, AlertCircle, MapPin as MapPinIcon, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import LocationMapPicker from "../components/LocationMapPicker";
 
-export default function AgriSoilMoisture() {
+export default function AgriSoilMoisture({ location, setLocation }: ToolProps) {
   const { t } = useTranslation();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [coords, setCoords] = useState({ lat: 40.7128, lng: -74.006 }); // Default New York
+  const coords = location;
 
+  // Offer the browser's position only when nothing has been chosen yet, so
+  // it never overrides a location someone picked or shared.
   useEffect(() => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setCoords({ lat: position.coords.latitude, lng: position.coords.longitude });
-        },
-        () => {
-          console.warn("Geolocation denied or failed, using defaults");
-        }
-      );
-    }
+    if (location) return;
+    if (!("geolocation" in navigator)) return;
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          label: "Current location",
+        });
+      },
+      () => {
+        // Denied or unavailable: the visitor picks a location instead.
+      },
+    );
+    // Runs once: later changes come from the picker or the URL.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
+    if (!coords) return;
+    const { lat, lng } = coords;
     async function fetchData() {
       setLoading(true);
       setError(null);
@@ -35,7 +47,7 @@ export default function AgriSoilMoisture() {
           response = await fetch("/api/openmeteo-agri-soil", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ lat: coords.lat, lng: coords.lng }),
+            body: JSON.stringify({ lat: lat, lng: lng }),
           });
         }
         
@@ -55,6 +67,8 @@ export default function AgriSoilMoisture() {
     }
     fetchData();
   }, [coords]);
+
+  if (!coords) return <NeedsLocation what="Soil Moisture" />;
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6">
@@ -94,7 +108,7 @@ export default function AgriSoilMoisture() {
           <LocationMapPicker 
             lat={coords.lat} 
             lng={coords.lng} 
-            onChange={(lat, lng) => setCoords({ lat, lng })}
+            onChange={(lat, lng) => setLocation({ lat, lng, label: "" })}
             height="180px"
           />
         </div>

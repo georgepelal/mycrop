@@ -67,8 +67,8 @@ export default function AuthPage() {
           <div className="bg-emerald-50 text-emerald-800 border border-emerald-150 px-4 py-3 rounded-2xl text-[11px] leading-relaxed flex items-start gap-2.5">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 mt-1.5 animate-ping" />
             <div>
-              <span className="font-black">Developer Sandbox Enabled</span>
-              <p className="text-emerald-700/90 font-medium">To facilitate testing, clicking the submit button will auto-login the profile <strong>georgepelal@gmail.com</strong>.</p>
+              <span className="font-black">Sign-in unavailable</span>
+              <p className="text-emerald-700/90 font-medium">This deployment has no Firebase configuration, so accounts and saved fields are disabled. Every tool that only needs a location still works.</p>
             </div>
           </div>
         )}
@@ -99,7 +99,7 @@ export default function AuthPage() {
                     required
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="George Pelal"
+                    placeholder="Your name"
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-xs text-slate-800 font-semibold focus:outline-none focus:border-brand-green"
                   />
                 </div>
@@ -118,7 +118,7 @@ export default function AuthPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="georgepelal@gmail.com"
+                  placeholder="you@example.com"
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-xs text-slate-800 font-semibold focus:outline-none focus:border-brand-green"
                 />
               </div>
@@ -162,7 +162,7 @@ export default function AuthPage() {
               </>
             ) : (
               <>
-                <span>{isSignUp ? "Create Station Account" : "Access Telemetry Cabin"}</span>
+                <span>{isSignUp ? "Create account" : "Sign in"}</span>
                 <ArrowRight className="w-4.5 h-4.5" />
               </>
             )}
@@ -198,7 +198,7 @@ export default function AuthPage() {
             onClick={() => setIsSignUp(!isSignUp)}
             className="text-xs font-semibold text-brand-green hover:text-brand-green-hover transition-colors cursor-pointer"
           >
-            {isSignUp ? "Already registered? Sign in instead" : "Need a telemetry station? Register boundary"}
+            {isSignUp ? "Already have an account? Sign in" : "No account yet? Create one"}
           </button>
         </div>
 

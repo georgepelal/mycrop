@@ -1,9 +1,7 @@
+import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
 import { ArrowLeft, Loader2, Globe, AlertTriangle, Flame, Mountain, CloudLightning, Info } from "lucide-react";
 
-interface NasaEonetEventsProps {
-  onNavigate: (page: string) => void;
-}
 
 interface EonetEvent {
   id: string;
@@ -20,7 +18,8 @@ interface EonetData {
   apiCitation: string;
 }
 
-export default function NasaEonetEvents({ onNavigate }: NasaEonetEventsProps) {
+export default function NasaEonetEvents() {
+  const navigate = useNavigate();
   const [data, setData] = useState<EonetData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +79,7 @@ export default function NasaEonetEvents({ onNavigate }: NasaEonetEventsProps) {
       <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between lg:pr-8">
         <div className="flex items-center gap-4 border-b border-transparent pb-2">
           <button 
-            onClick={() => onNavigate("field-overview")}
+            onClick={() => navigate("/tools")}
             className="p-2 hover:bg-slate-100 rounded-full transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />

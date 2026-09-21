@@ -1,16 +1,11 @@
+import { useNavigate } from "react-router-dom";
+import { ToolProps } from "../tools/registry";
 import React, { useEffect, useMemo, useState } from "react";
-import { Parcel } from "../types";
 import { Loader2, MapPin, Info, ThermometerSun, Calendar as CalendarIcon, Waves, ArrowLeft } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from "recharts";
 import { format, subDays, parse } from "date-fns";
 import { EarthIslandVisualizer } from "../components/EarthIslandVisualizer";
 
-interface NasaAgronomicSoilProps {
-  parcels: Parcel[];
-  activeParcelId: string | null;
-  onSelectParcel: (id: string) => void;
-  onNavigate: (page: string) => void;
-}
 
 const getMoistureBlockColor = (moisture: number) => {
   if (moisture > 0.8) return "bg-[#1e3a8a] border-t-[#3b82f6] border-l-[#3b82f6] border-b-[#172554] border-r-[#172554]";
@@ -20,11 +15,17 @@ const getMoistureBlockColor = (moisture: number) => {
   return "bg-[#d6d3d1] border-t-[#f5f5f4] border-l-[#f5f5f4] border-b-[#a8a29e] border-r-[#a8a29e]";
 };
 
-export default function NasaAgronomicSoil({ parcels, activeParcelId, onNavigate }: NasaAgronomicSoilProps) {
+export default function NasaAgronomicSoil({ parcels, activeParcelId, location }: ToolProps) {
+  const navigate = useNavigate();
   const activeParcel = parcels?.find(p => p.id === activeParcelId) || parcels?.[0];
+  // A saved field's coordinates when one is selected, otherwise the shared
+  // location, so the tool works with or without an account.
   const coords = useMemo(
-    () => activeParcel ? { lat: activeParcel.lat || activeParcel.latitude, lng: activeParcel.lng || activeParcel.longitude } : null,
-    [activeParcel]
+    () =>
+      activeParcel
+        ? { lat: activeParcel.lat || activeParcel.latitude, lng: activeParcel.lng || activeParcel.longitude }
+        : location,
+    [activeParcel, location]
   );
 
   const [loading, setLoading] = useState(false);
@@ -54,9 +55,20 @@ export default function NasaAgronomicSoil({ parcels, activeParcelId, onNavigate 
         // GWETTOP: Top Soil Moisture
         // TS: Earth Skin Temperature
         const paramsQuery = "GWETPROF,GWETROOT,GWETTOP,TS";
-        const powerUrl = `https://power.larc.nasa.gov/api/temporal/daily/point?parameters=${paramsQuery}&community=ag&longitude=${fetchLng}&latitude=${fetchLat}&start=${startStr}&end=${endStr}&format=json`;
+        const powerUrl = "/api/nasa-power-daily";
+        const powerRequest = {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lat: fetchLat,
+            lng: fetchLng,
+            start: startStr,
+            end: endStr,
+            parameters: paramsQuery.toUpperCase(),
+          }),
+        };
 
-        const res = await fetch(powerUrl);
+        const res = await fetch(powerUrl, powerRequest);
         if (!res.ok) {
           throw new Error("Failed to fetch Satellite data");
         }
@@ -109,7 +121,7 @@ export default function NasaAgronomicSoil({ parcels, activeParcelId, onNavigate 
       <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => onNavigate("field-overview")}
+            onClick={() => navigate("/tools")}
             className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />

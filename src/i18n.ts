@@ -6,12 +6,12 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 const resources = {
   en: {
     translation: {
-        "sidebar.dashboard": "Telemetry Dashboard",
+        "sidebar.dashboard": "Field Dashboard",
         "sidebar.parcels": "Farmland Parcels",
         "sidebar.field3dView": "3D Field Viewer (New)",
         "sidebar.predictor": "Yield Predictor",
         "sidebar.aiChat": "AI Agronomist Chat",
-        "sidebar.weather": "Weather Telemetry",
+        "sidebar.weather": "Weather",
         "sidebar.accountSettings": "Account Settings",
         "sidebar.controlSettings": "Control Settings",
         "sidebar.liveAgent": "Live Agent",
@@ -24,9 +24,9 @@ const resources = {
         "dashboard.canopyVigor": "Average Canopy Vigor",
         "dashboard.waterContent": "Water Content Avg",
         "dashboard.underThreat": "Parcels Under Threat",
-        "parcels.headerSubtitle": "Spatial Telemetry Map",
+        "parcels.headerSubtitle": "Field Map",
         "parcels.headerTitle": "Drawn Field Parcels",
-        "parcels.headerDesc": "Inspect drawn boundary nodes, live chlorophyll Sentinel measurements, and estimated harvest productivities.",
+        "parcels.headerDesc": "Review the field boundaries you have drawn, the soil and weather data fetched for them, and your own recorded estimates.",
         "parcels.launch3D": "Launch Interactive 3D Terrain",
         "parcels.drawFields": "Draw Field boundaries",
         "account.headerSubtitle": "Identity Console",
@@ -34,16 +34,16 @@ const resources = {
         "account.headerDesc": "Manage your agent profile, change authentication keys, verify coordinates, and configure security access modules.",
         "predictor.headerSubtitle": "Integrated Machine Learning Simulation Node",
         "predictor.headerTitle": "Astrometeorological & AI Crop Predictor",
-        "predictor.headerDesc": "Link satellite NDVI spectra, Global Soil Data composition metrics, and dynamic mathematical photoperiod orbits via Gemini AI...",
+        "predictor.headerDesc": "Combines soil composition, weather and day length for a field, with an optional Gemini-written summary.",
         "weather.headerSubtitle": "GIS Climate & Remote Meteorological Feed",
-        "weather.headerTitle": "Micro-Climate Telemetry",
+        "weather.headerTitle": "Local Weather",
         "weather.liveStatus": "Real-time Satellite Feed Active",
-        "auth.registerTitle": "Register Telemetry Station",
-        "auth.loginTitle": "Agent Authorization",
-        "auth.desc": "Verify credentials to establish a secure link with your crop yield nodes and Sentinel orbits.",
+        "auth.registerTitle": "Create an account",
+        "auth.loginTitle": "Sign in",
+        "auth.desc": "An account saves your field boundaries. Every tool that works from a location needs no account at all.",
         "settings.headerSubtitle": "System Preferences",
         "settings.headerTitle": "Control Settings",
-        "settings.headerDesc": "Configure telemetry polling frequencies, satellite sync layers, user and admin api credentials, and environment matrix bounds."
+        "settings.headerDesc": "Units, language and theme."
   }
   },
   es: {

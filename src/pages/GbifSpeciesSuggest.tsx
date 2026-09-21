@@ -7,20 +7,6 @@ export default function GbifSpeciesSuggest() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [coords, setCoords] = useState({ lat: 40.7128, lng: -74.006 }); // Default New York
-
-  useEffect(() => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setCoords({ lat: position.coords.latitude, lng: position.coords.longitude });
-        },
-        () => {
-          console.warn("Geolocation denied or failed, using defaults");
-        }
-      );
-    }
-  }, []);
 
   useEffect(() => {
     async function fetchData() {
@@ -53,7 +39,8 @@ export default function GbifSpeciesSuggest() {
       }
     }
     fetchData();
-  }, [coords]);
+  }, []);
+
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6">

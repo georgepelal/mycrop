@@ -1,10 +1,10 @@
+import { useNavigate } from "react-router-dom";
+import { ToolProps } from "../tools/registry";
+import { useFetchOnLocation } from "../tools/useFetchOnLocation";
 import React, { useState } from "react";
 import { ArrowLeft, Loader2, Map as MapIcon, Trees, Droplets, MapPin, Info, Compass } from "lucide-react";
 import LocationSearch from "../components/LocationSearch";
 
-interface OSMNaturalProps {
-  onNavigate: (page: string) => void;
-}
 
 interface Feature {
   id: number;
@@ -23,7 +23,8 @@ interface OSMData {
   apiCitation: string;
 }
 
-export default function OSMNaturalFeatures({ onNavigate }: OSMNaturalProps) {
+export default function OSMNaturalFeatures({ location, setLocation }: ToolProps) {
+  const navigate = useNavigate();
   const [data, setData] = useState<OSMData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,12 +81,16 @@ export default function OSMNaturalFeatures({ onNavigate }: OSMNaturalProps) {
     return "bg-slate-50 border-slate-200";
   };
 
+  // Fetches whenever the shared location changes, so a link that carries a
+  // location reproduces the data rather than an empty tool.
+  useFetchOnLocation(location, handleLocationSelect);
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between lg:pr-8">
         <div className="flex items-center gap-4 border-b border-transparent pb-2">
           <button 
-            onClick={() => onNavigate("field-overview")}
+            onClick={() => navigate("/tools")}
             className="p-2 hover:bg-slate-100 rounded-full transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -103,7 +108,8 @@ export default function OSMNaturalFeatures({ onNavigate }: OSMNaturalProps) {
         
         <div className="w-full md:w-96">
           <LocationSearch 
-            onLocationSelect={handleLocationSelect} 
+            onLocationSelect={(lat, lng, name) => setLocation({ lat, lng, label: name })}
+            initialLocationName={location?.label ?? ""} 
             placeholder="Search anywhere..." 
           />
         </div>

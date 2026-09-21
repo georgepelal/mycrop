@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSettings } from "../contexts/useSettings";
@@ -165,11 +166,10 @@ function ParcelMiniMap({ parcel }: { parcel: Parcel }) {
 interface ParcelsProps {
   parcels: Parcel[];
   onSelectParcel: (parcel: Parcel) => void;
-  onNavigateToForm: () => void;
-  onNavigateTo3D: () => void;
 }
 
-export default function Parcels({ parcels, onSelectParcel, onNavigateToForm }: ParcelsProps) {
+export default function Parcels({ parcels, onSelectParcel }: ParcelsProps) {
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const { formatArea, formatYield } = useSettings();
   return (
@@ -191,7 +191,7 @@ export default function Parcels({ parcels, onSelectParcel, onNavigateToForm }: P
 
         <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={onNavigateToForm}
+            onClick={() => navigate("/parcel-form")}
             className="flex items-center gap-1.5 bg-brand-green hover:bg-brand-green-hover text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer shadow-sm"
           >
             <Plus className="w-4 h-4" />
@@ -212,7 +212,7 @@ export default function Parcels({ parcels, onSelectParcel, onNavigateToForm }: P
             </p>
           </div>
           <button
-            onClick={onNavigateToForm}
+            onClick={() => navigate("/parcel-form")}
             className="bg-brand-green hover:bg-brand-green-hover text-white text-xs font-display font-extrabold px-5 py-3 rounded-xl shadow-sm transition-all"
           >
             {t("parcels.emptyButton", "Open GPS Boundary Canvas")}

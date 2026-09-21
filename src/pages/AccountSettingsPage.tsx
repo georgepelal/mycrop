@@ -44,8 +44,8 @@ export default function AccountSettingsPage() {
 
   // Avatar presets & URL state
   const [photoURL, setPhotoURL] = useState(user?.photoURL || "🌱");
-  const [displayName, setDisplayName] = useState(user?.displayName || "George Pelal");
-  const [userEmail, setUserEmail] = useState(user?.email || "georgepelal@gmail.com");
+  const [displayName, setDisplayName] = useState(user?.displayName || "");
+  const [userEmail, setUserEmail] = useState(user?.email || "");
   
   // Custom metadata extra states
   const [phone, setPhone] = useState(() => localStorage.getItem("mycrop_profile_phone") || "");
@@ -76,8 +76,8 @@ export default function AccountSettingsPage() {
   // Populate info on page load or auth change
   useEffect(() => {
     if (user) {
-      setDisplayName(user.displayName || "George Pelal");
-      setUserEmail(user.email || "georgepelal@gmail.com");
+      setDisplayName(user.displayName || "");
+      setUserEmail(user.email || "");
       setPhotoURL(user.photoURL || "🌱");
     }
   }, [user]);

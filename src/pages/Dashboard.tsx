@@ -43,7 +43,7 @@ export default function Dashboard({
               {activeParcel.name}
             </h1>
             <p className="text-emerald-50 max-w-lg leading-relaxed text-sm">
-              Your {activeParcel.cropType} field is looking {activeParcel.ndviValue > 0.6 ? "great" : "like it needs attention"}. 
+              Your {activeParcel.cropType} field {activeParcel.ndviValue === null ? "has no NDVI reading yet" : activeParcel.ndviValue > 0.6 ? "is looking great" : "looks like it needs attention"}. 
               Everything you need to know is broken down below. Click any card to dive deep into the science.
             </p>
           </div>

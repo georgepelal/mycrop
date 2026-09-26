@@ -94,7 +94,7 @@ function ParcelMiniMap({ parcel }: { parcel: Parcel }) {
               style={{
                 left: `${tile.left}px`,
                 top: `${tile.top}px`,
-                filter: parcel.ndvi > 0.6 
+                filter: (parcel.ndvi ?? 0) > 0.6 
                   ? "hue-rotate(85deg) saturate(2.4) contrast(1.1) brightness(0.9)" 
                   : "none"
               }}
@@ -118,7 +118,7 @@ function ParcelMiniMap({ parcel }: { parcel: Parcel }) {
           <>
             <polygon
               points={pointsStr}
-              fill={parcel.ndvi > 0.6 ? "rgba(34, 197, 94, 0.25)" : "rgba(34, 197, 94, 0.18)"}
+              fill={(parcel.ndvi ?? 0) > 0.6 ? "rgba(34, 197, 94, 0.25)" : "rgba(34, 197, 94, 0.18)"}
               stroke="#22c55e"
               strokeWidth="2.5"
               className="drop-shadow-[0_0_4px_rgba(34,197,94,0.7)]"
@@ -263,8 +263,8 @@ export default function Parcels({ parcels, onSelectParcel, onNavigateToForm }: P
                     <span className="text-[8px] text-gray-400 uppercase tracking-widest font-mono font-bold">NDVI Index</span>
                     <div className="flex items-center gap-1">
                       <TrendingUp className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      <span className={`text-xs font-bold ${parcel.ndvi > 0.7 ? "text-emerald-600" : parcel.ndvi > 0.5 ? "text-amber-600" : "text-rose-600"}`}>
-                        {parcel.ndvi.toFixed(2)}
+                      <span className={`text-xs font-bold ${parcel.ndvi === null ? "text-slate-400" : parcel.ndvi > 0.7 ? "text-emerald-600" : parcel.ndvi > 0.5 ? "text-amber-600" : "text-rose-600"}`}>
+                        {parcel.ndvi !== null ? parcel.ndvi.toFixed(2) : "—"}
                       </span>
                     </div>
                   </div>
@@ -325,21 +325,22 @@ export default function Parcels({ parcels, onSelectParcel, onNavigateToForm }: P
                   </div>
                 )}
 
-                {/* Visual NPK Soil Nutrient Badges Row */}
+                {/* NPK: N from SoilGrids when queried; P and K have no global dataset and need a soil test.
+                    They used to be computed from the parcel id and pH, i.e. made up. */}
                 <div className="flex items-center gap-1.5 p-3 bg-slate-900 border border-slate-800 rounded-2xl text-white">
                   <div className="text-[8px] font-bold font-mono text-emerald-400 rotate-270 uppercase tracking-widest leading-none border-r border-slate-800/60 pr-2 mr-0.5">NPK</div>
                   <div className="flex-1 grid grid-cols-3 gap-1.5 text-center">
                     <div>
                       <span className="text-[7px] text-slate-400 font-mono block font-bold leading-none uppercase">N</span>
-                      <span className="text-[10px] text-emerald-400 font-mono font-extrabold">{parcel.soilGridsNitrogenValue !== undefined ? `${parcel.soilGridsNitrogenValue}cg` : "110cg"}</span>
+                      <span className="text-[10px] text-emerald-400 font-mono font-extrabold">{parcel.soilGridsNitrogenValue != null ? `${parcel.soilGridsNitrogenValue}cg/kg` : "—"}</span>
                     </div>
                     <div>
                       <span className="text-[7px] text-slate-400 font-mono block font-bold leading-none uppercase">P</span>
-                      <span className="text-[10px] text-orange-400 font-mono font-extrabold">{Math.round(((parcel.soilPH || 6.5) * 12 + (parseInt(parcel.id.replace(/\D/g, "")) || 5) * 3) % 45) + 15}ppm</span>
+                      <span className="text-[10px] text-orange-400 font-mono font-extrabold">— <span className="text-[7px] text-slate-500">soil test</span></span>
                     </div>
                     <div>
                       <span className="text-[7px] text-slate-400 font-mono block font-bold leading-none uppercase">K</span>
-                      <span className="text-[10px] text-violet-400 font-mono font-extrabold">{Math.round(((parcel.soilGridsClay || 32) * 4.2 + (parseInt(parcel.id.replace(/\D/g, "")) || 8) * 8) % 180) + 120}ppm</span>
+                      <span className="text-[10px] text-violet-400 font-mono font-extrabold">— <span className="text-[7px] text-slate-500">soil test</span></span>
                     </div>
                   </div>
                 </div>

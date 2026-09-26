@@ -270,23 +270,23 @@ export default function SoilOrganicCarbon({ parcels, activeParcelId, onSelectPar
                   { id: "60-100cm", name: "Deep Soil", height: 4 },
                   { id: "100-200cm", name: "Bedrock Transition", height: 5 }
                 ].map(layerInfo => {
-                  const soc = data.soc[layerInfo.id] ?? 0;
-                  const nitrogen = data.nitrogen[layerInfo.id] ?? 0;
+                  const soc: number | null = data.soc[layerInfo.id] ?? null;
+                  const nitrogen: number | null = data.nitrogen[layerInfo.id] ?? null;
                   return {
                     id: layerInfo.id,
                     height: layerInfo.height,
                     leftLabel: <span className="text-white/80 font-black text-[9px] sm:text-[10px] lg:text-xs whitespace-nowrap drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">{layerInfo.id}</span>,
                     rightLabel: (
                       <div className="flex flex-col text-[10px] font-extrabold text-white leading-none drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] gap-0.5 whitespace-nowrap">
-                        <span className="text-emerald-300">SOC: {soc.toFixed(1)} g/kg</span>
-                        <span className="text-blue-300 text-[9px]">N: {nitrogen.toFixed(2)} g/kg</span>
+                        <span className="text-emerald-300">SOC: {soc !== null ? `${soc.toFixed(1)} g/kg` : "—"}</span>
+                        <span className="text-blue-300 text-[9px]">N: {nitrogen !== null ? `${nitrogen.toFixed(2)} g/kg` : "—"}</span>
                       </div>
                     ),
                     renderBlock: (rowIndex, colIndex) => (
-                      <div key={`${layerInfo.id}-${rowIndex}-${colIndex}`} className={`w-[var(--block-size)] h-[var(--block-size)] border-[1px] md:border-[2px] ${getSocBlockColor(soc)} shrink-0 group relative`}>
+                      <div key={`${layerInfo.id}-${rowIndex}-${colIndex}`} className={`w-[var(--block-size)] h-[var(--block-size)] border-[1px] md:border-[2px] ${soc !== null ? getSocBlockColor(soc) : "bg-slate-500/40 border-slate-400/40"} shrink-0 group relative`}>
                         {rowIndex === 0 && colIndex === 10 && (
                           <div className="absolute hidden group-hover:block bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded whitespace-nowrap z-20">
-                            {layerInfo.id}: {soc.toFixed(1)} g/kg
+                            {layerInfo.id}: {soc !== null ? `${soc.toFixed(1)} g/kg` : "no data"}
                           </div>
                         )}
                       </div>

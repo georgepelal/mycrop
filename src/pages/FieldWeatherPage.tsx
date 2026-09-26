@@ -174,7 +174,7 @@ export default function FieldWeatherPage({ parcels, activeParcelId, onSelectParc
                 <div>
                   <h3 className="text-sm font-black text-rose-800">Forecast Sync Failed</h3>
                   <p className="text-sm font-medium text-rose-600 mt-1">{error}</p>
-                  <p className="text-xs text-rose-400 mt-2">Open-Meteo services might be experiencing high volume. Fallback simulations can be initialized by refreshing.</p>
+                  <p className="text-xs text-rose-400 mt-2">Open-Meteo may be busy. Try again in a minute — no weather is shown rather than made-up values.</p>
                 </div>
               </div>
             ) : weatherData ? (

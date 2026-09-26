@@ -10,13 +10,23 @@ interface WueData {
   latitude: number;
   longitude: number;
   isLiveWue: boolean;
+  crop: string;
+  cropKc: number;
   times: string[];
   referenceEt0: number[];
-  waterUseEfficiencyRatio: string;
-  optimalIrrigationMm: number;
+  cropEtc: number[];
+  precipitation: number[];
   cumulativeEvapotranspirationMm: number;
+  cumulativeCropDemandMm: number;
+  forecastRainMm: number;
+  // Crop demand minus forecast rain, full canopy, no soil-storage credit —
+  // an upper bound on what irrigation would have to supply.
+  netCropDemandMm: number;
+  availableCrops: string[];
   apiCitation: string;
 }
+
+const CROPS = ["maize", "wheat", "barley", "cotton", "potato", "tomato", "soybean", "sugar beet", "rice", "alfalfa", "olive", "grapes"];
 
 export default function CropWaterEfficiency({ onNavigate }: CropWaterEfficiencyProps) {
   const [data, setData] = useState<WueData | null>(null);
@@ -24,21 +34,24 @@ export default function CropWaterEfficiency({ onNavigate }: CropWaterEfficiencyP
   const [error, setError] = useState<string | null>(null);
   const [locationName, setLocationName] = useState("");
   const [showRawJSON, setShowRawJSON] = useState(false);
+  const [crop, setCrop] = useState("maize");
+  const [lastLocation, setLastLocation] = useState<{ lat: number; lng: number; name: string } | null>(null);
 
-  const fetchData = async (lat: number, lng: number, name: string) => {
+  const fetchData = async (lat: number, lng: number, name: string, selectedCrop = crop) => {
     setLoading(true);
     setError(null);
     setLocationName(name);
+    setLastLocation({ lat, lng, name });
     try {
       const response = await fetch("/api/crop-water-efficiency", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lat, lng })
+        body: JSON.stringify({ lat, lng, crop: selectedCrop })
       });
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || "Failed to compute water efficiency metrics");
+        throw new Error(errData.error || "Failed to compute crop water demand");
       }
 
       const json = await response.json();
@@ -74,10 +87,10 @@ export default function CropWaterEfficiency({ onNavigate }: CropWaterEfficiencyP
           <div>
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
               <Droplets className="w-7 h-7 text-blue-500" />
-              Crop Water Efficiency
+              Crop Water Demand
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              Irrigation optimization and yield-per-drop metrics.
+              FAO-56 crop evapotranspiration against the rain forecast.
             </p>
           </div>
         </div>
@@ -97,7 +110,7 @@ export default function CropWaterEfficiency({ onNavigate }: CropWaterEfficiencyP
             Target an Irrigation Zone
           </h3>
           <p className="text-sm text-slate-500 max-w-md">
-            Analyze the relationship between evapotranspiration (ET0) and crop yield index to estimate optimal irrigation baselines.
+            See how much water a crop at full canopy will use over the next 7 days, and how much of that the forecast rain covers.
           </p>
         </div>
       )}
@@ -106,7 +119,7 @@ export default function CropWaterEfficiency({ onNavigate }: CropWaterEfficiencyP
         <div className="h-96 flex flex-col items-center justify-center border border-gray-100 rounded-3xl bg-white shadow-sm">
           <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
           <p className="text-sm font-medium text-gray-500">
-            Running hydraulic efficiency algorithms...
+            Fetching evapotranspiration and rain forecast...
           </p>
         </div>
       )}
@@ -126,36 +139,52 @@ export default function CropWaterEfficiency({ onNavigate }: CropWaterEfficiencyP
             
           </div>
 
+          <div className="flex items-center gap-3">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Crop</label>
+            <select
+              value={crop}
+              onChange={(e) => {
+                setCrop(e.target.value);
+                if (lastLocation) fetchData(lastLocation.lat, lastLocation.lng, lastLocation.name, e.target.value);
+              }}
+              className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white"
+            >
+              {CROPS.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+            <span className="text-xs text-slate-400">Mid-season Kc {data.cropKc} (FAO-56 Table 12)</span>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
              <div className="bg-blue-900 border border-blue-800 rounded-2xl p-6 shadow-xl relative overflow-hidden text-center flex flex-col justify-center min-h-[240px]">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
                 <div className="flex justify-center mb-4 relative z-10"><LeafyGreen className="w-10 h-10 text-blue-300" /></div>
-                <div className="text-blue-200 font-bold uppercase tracking-widest text-xs mb-2 relative z-10">Water Use Efficiency Ratio (WUE)</div>
+                <div className="text-blue-200 font-bold uppercase tracking-widest text-xs mb-2 relative z-10">Crop Water Demand · {data.times.length} Days</div>
                 <div className="text-6xl font-black text-white flex justify-center items-baseline gap-1 relative z-10">
-                   {data.waterUseEfficiencyRatio} <span className="text-2xl text-blue-200/60 font-medium tracking-normal">kg/m³</span>
+                   {data.cumulativeCropDemandMm.toFixed(1)} <span className="text-2xl text-blue-200/60 font-medium tracking-normal">mm</span>
                 </div>
                  <div className="text-blue-100/70 font-mono text-xs mt-3 relative z-10 opacity-70">
-                   Yield per cubic meter of water transpired.
+                   ET0 × Kc for {data.crop} at full canopy
                 </div>
              </div>
 
              <div className="bg-white border rounded-2xl p-6 shadow-sm flex flex-col justify-between min-h-[240px] text-left relative overflow-hidden">
                 <div className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-4 flex items-center gap-2 relative z-10">
-                  <BarChart3 className="w-4 h-4" /> 7-Day Hydrologic Profile
+                  <BarChart3 className="w-4 h-4" /> Water Budget
                 </div>
-                
                 <div className="space-y-4 relative z-10">
                   <div className="flex justify-between items-end border-b border-slate-100 pb-3">
                      <div>
-                       <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Recommended Irrigation</div>
-                       <div className="text-3xl font-black text-indigo-600">{(data.optimalIrrigationMm || 0).toFixed(1)} <span className="text-lg text-slate-400 font-medium tracking-normal">mm</span></div>
+                       <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Forecast Rain</div>
+                       <div className="text-3xl font-black text-sky-600">{data.forecastRainMm.toFixed(1)} <span className="text-lg text-slate-400 font-medium tracking-normal">mm</span></div>
                      </div>
                   </div>
-                  
                   <div className="flex justify-between items-end">
                      <div>
-                       <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Cumulative Loss (ET0)</div>
-                       <div className="text-3xl font-black text-rose-500">{(data.cumulativeEvapotranspirationMm || 0).toFixed(1)} <span className="text-lg text-slate-400 font-medium tracking-normal">mm</span></div>
+                       <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Demand Not Met By Rain (upper bound)</div>
+                       <div className="text-3xl font-black text-indigo-600">{data.netCropDemandMm.toFixed(1)} <span className="text-lg text-slate-400 font-medium tracking-normal">mm</span></div>
+                       <div className="text-[11px] text-slate-400 mt-1">Ignores water already stored in the soil, so real irrigation need is usually lower.</div>
                      </div>
                   </div>
                 </div>
@@ -174,7 +203,9 @@ export default function CropWaterEfficiency({ onNavigate }: CropWaterEfficiencyP
                 <thead className="bg-white text-xs uppercase text-slate-400">
                   <tr>
                     <th className="px-6 py-4 font-bold tracking-wider">Date</th>
-                    <th className="px-6 py-4 font-bold tracking-wider">Atmospheric Water Demand (mm/day)</th>
+                    <th className="px-6 py-4 font-bold tracking-wider">ET0 (mm/day)</th>
+                    <th className="px-6 py-4 font-bold tracking-wider">Crop ETc (mm/day)</th>
+                    <th className="px-6 py-4 font-bold tracking-wider">Rain (mm)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 font-mono text-xs">
@@ -182,6 +213,8 @@ export default function CropWaterEfficiency({ onNavigate }: CropWaterEfficiencyP
                     <tr key={idx} className="hover:bg-blue-50/30 transition-colors">
                       <td className="px-6 py-3 font-semibold text-slate-700">{date}</td>
                       <td className="px-6 py-3 text-rose-600 font-bold">{data.referenceEt0?.[idx]}</td>
+                      <td className="px-6 py-3 text-indigo-600 font-bold">{data.cropEtc?.[idx]}</td>
+                      <td className="px-6 py-3 text-sky-600 font-bold">{data.precipitation?.[idx]}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -192,8 +225,8 @@ export default function CropWaterEfficiency({ onNavigate }: CropWaterEfficiencyP
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex gap-4 text-slate-700">
             <Info className="w-6 h-6 shrink-0 mt-0.5 text-slate-500" />
             <div className="text-sm leading-relaxed">
-              <strong className="block mb-1">Standard FAO Penman-Monteith ET0</strong> 
-              Computed using atmospheric transmissivity and vapor pressure deficit models to calculate maximal water holding boundaries before onset of systemic wilt.
+              <strong className="block mb-1">FAO-56 crop water demand</strong>
+              Reference evapotranspiration (ET0, FAO-56 Penman-Monteith, from Open-Meteo) multiplied by the crop's mid-season coefficient. Water use efficiency is not shown: it needs your yield, which weather data can't provide.
               <div className="mt-2 text-xs italic text-slate-400 border-t border-slate-200 pt-2">{data.apiCitation}</div>
             </div>
           </div>

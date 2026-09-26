@@ -188,20 +188,36 @@ export default function DiagnosticAnalytics({
         }).then(r => r.ok ? r.json() : null)
       ]);
 
-      const ndviVal = copernicus?.indexTimeline?.ndvi ?? activeParcel.ndviValue ?? 0.74;
-      const ndwiVal = copernicus?.indexTimeline?.ndwi ?? 0.44;
-      const watershedName = usgs?.watershed?.name ?? "Regional Hydrographic Basin";
-      const hucUnit = usgs?.watershed?.hydrologicUnitCode12 ?? "N/A HUC12";
-      const elevationM = geotech?.geotech?.elevationMeters ?? 180;
-      const slopeDeg = geotech?.geotech?.estimatedSlopeDegrees ?? 4.5;
-      const forestRatio = worldbank?.forestAreaPercent ?? 33.5;
-      const countryMap = worldbank?.countryName ?? "United States";
-      const pblHeight = boundary?.aerodynamics?.boundaryLayerHeightMeters ?? 820;
-      const caloriesVal = macronutrients?.nutrientsPer100g?.calories ?? 65;
+      // Only sources that answered go into the summary. Missing ones are
+      // listed as unavailable — never replaced with a "typical" number (the
+      // old version filled NDVI 0.74, 180 m, 4.5°, 33.5% forest, "United
+      // States" and so on whenever an endpoint failed).
+      const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
+      const ndviVal = num(copernicus?.indexTimeline?.ndvi);
+      const ndwiVal = num(copernicus?.indexTimeline?.ndwi);
+      const elevationM = num(geotech?.geotech?.elevationMeters);
+      const slopeDeg = num(geotech?.geotech?.estimatedSlopeDegrees);
+      const forestRatio = num(worldbank?.forestAreaPercent);
+      const pblHeight = num(boundary?.aerodynamics?.boundaryLayerHeightMeters);
+      const caloriesVal = num(macronutrients?.nutrientsPer100g?.calories);
 
-      const summaryStr = `Astro-Ecological Multi-API scan completed at ${elevationM}m altitude in the ${watershedName} drainage basin (HUC: ${hucUnit}). Boundary convective layer height is at ${pblHeight}m with thermal state: ${boundary?.aerodynamics?.thermalTurbulenceState || "Stable"}. Estimated canopy reflectance index at ${ndviVal} NDVI, and canopy wetness at ${ndwiVal} NDWI (location-based estimate, not live satellite imagery). Regional forest coverage register reports ${forestRatio}% in ${countryMap}. Harvest standard crop nutritive catalog defines edible-weight content at ${caloriesVal} kcal/100g.`;
+      const parts: string[] = [];
+      const unavailable: string[] = [];
+      if (elevationM !== null) parts.push(`Elevation ${elevationM} m${slopeDeg !== null ? `, estimated slope ${slopeDeg}°` : ""}.`);
+      else unavailable.push("elevation");
+      if (usgs?.watershed?.name) parts.push(`Watershed: ${usgs.watershed.name}${usgs.watershed.hydrologicUnitCode12 ? ` (HUC12 ${usgs.watershed.hydrologicUnitCode12})` : ""}.`);
+      else unavailable.push("watershed");
+      if (pblHeight !== null) parts.push(`Boundary layer height ${pblHeight} m.`);
+      else unavailable.push("boundary layer");
+      if (ndviVal !== null) parts.push(`Sentinel-2 NDVI ${ndviVal}${ndwiVal !== null ? `, NDWI ${ndwiVal}` : ""} (observed ${copernicus?.observedOn ?? "recently"}).`);
+      else unavailable.push("Sentinel-2");
+      if (forestRatio !== null && worldbank?.countryName) parts.push(`National forest cover in ${worldbank.countryName}: ${forestRatio}%.`);
+      else unavailable.push("forest cover");
+      if (caloriesVal !== null) parts.push(`${cropName}: ${caloriesVal} kcal/100 g.`);
+      else unavailable.push("nutrition");
+      const summaryStr = `${parts.join(" ")}${unavailable.length ? ` Unavailable: ${unavailable.join(", ")}.` : ""}`.trim();
 
-      const ratingStatus = ndviVal > 0.65 && slopeDeg < 11 ? "optimal" : slopeDeg > 9 ? "warning" : "info";
+      const ratingStatus = slopeDeg !== null && slopeDeg > 9 ? "warning" : ndviVal !== null && ndviVal > 0.65 ? "optimal" : "info";
 
       const compiledMetrics = {
         copernicus,
@@ -217,7 +233,7 @@ export default function DiagnosticAnalytics({
         parcelId: activeParcel.id,
         timestamp: new Date().toISOString(),
         category: "Eco-Astro Precision Scan",
-        apiSource: "Reflectance Estimate, USGS Rivers, WorldBank, OpenMeteo PBL, FAO",
+        apiSource: "Copernicus Sentinel-2, USGS, World Bank, Open-Meteo, nutrition catalogue",
         metricsJSONString: JSON.stringify(compiledMetrics),
         summary: summaryStr,
         status: ratingStatus
@@ -533,7 +549,11 @@ export default function DiagnosticAnalytics({
   });
 
   // Warnings
-  const warnings = parcels.filter(p => p.soilMoisture < 35 || p.ndviValue < 0.45 || p.soilPH < 5.5);
+  const warnings = parcels.filter(p => (p.soilMoisture !== null && p.soilMoisture < 35) || (p.ndviValue !== null && p.ndviValue < 0.45) || (p.soilPH !== null && p.soilPH < 5.5));
+  // Averages only over parcels that actually have the reading.
+  const avgOf = (vals: (number | null)[]) => { const r = vals.filter((v): v is number => v !== null); return r.length ? r.reduce((a, b) => a + b, 0) / r.length : null; };
+  const avgNdvi = avgOf(parcels.map(p => p.ndviValue));
+  const avgMoisture = avgOf(parcels.map(p => p.soilMoisture));
 
   return (
     <div className="space-y-6">
@@ -581,7 +601,7 @@ export default function DiagnosticAnalytics({
             <Gauge className="w-5 h-5 text-blue-600" />
           </div>
           <div className="text-3xl font-extrabold tracking-tight text-gray-900 font-display">
-            {(parcels.reduce((acc, p) => acc + p.ndviValue, 0) / parcels.length).toFixed(2)} <span className="text-xs text-gray-500 font-normal font-sans">NDVI</span>
+            {avgNdvi !== null ? avgNdvi.toFixed(2) : "—"} <span className="text-xs text-gray-500 font-normal font-sans">NDVI</span>
           </div>
           <span className="text-[10px] font-mono text-brand-green font-bold mt-2 flex items-center gap-1">
             <span className="h-1.5 w-1.5 rounded-full bg-brand-green animate-pulse" /> Optimal Leaf Density
@@ -596,7 +616,7 @@ export default function DiagnosticAnalytics({
             <CloudRain className="w-5 h-5 text-amber-500" />
           </div>
           <div className="text-3xl font-extrabold tracking-tight text-gray-900 font-display">
-            {Math.round(parcels.reduce((acc, p) => acc + p.soilMoisture, 0) / parcels.length)}%
+            {avgMoisture !== null ? `${Math.round(avgMoisture)}%` : "—"}
           </div>
           <span className="text-[10px] font-mono text-gray-400 mt-2 block">
             Subsurface moisture saturation average
@@ -954,9 +974,9 @@ export default function DiagnosticAnalytics({
                   const copernicusData = parsedData.copernicus;
                   const usgsData = parsedData.usgs;
                   const macroData = parsedData.macronutrients;
-                  const streamData = parsedData.boundary;
-                  const topoData = parsedData.geotech;
-                  const wbData = parsedData.forestry;
+                  const streamData = parsedData.boundary?.aerodynamics;
+                  const topoData = parsedData.geotech?.geotech;
+                  const wbData = parsedData.worldbank;
 
                   return (
                     <div className="bg-slate-50 border border-slate-200 p-5 rounded-2xl relative space-y-4">
@@ -986,9 +1006,9 @@ export default function DiagnosticAnalytics({
                             <span className="text-[11px] font-bold text-gray-800 block">Canopy Reflection Index</span>
                           </div>
                           <div className="mt-2 text-[10px] text-gray-600 font-mono space-y-0.5">
-                            <div>NDVI Index: <span className="font-bold text-slate-800">{(copernicusData?.indexTimeline?.ndvi ?? 0.74).toFixed(2)}</span></div>
-                            <div>NDWI Moisture: <span className="font-bold text-slate-800">{(copernicusData?.indexTimeline?.ndwi ?? 0.44).toFixed(2)}</span></div>
-                            <div className="text-[8px] text-gray-400 truncate mt-1">Classification: {copernicusData?.indexTimeline?.classification ?? "Healthy"}</div>
+                            <div>NDVI Index: <span className="font-bold text-slate-800">{copernicusData?.indexTimeline?.ndvi?.toFixed(2) ?? "—"}</span></div>
+                            <div>NDWI Moisture: <span className="font-bold text-slate-800">{copernicusData?.indexTimeline?.ndwi?.toFixed(2) ?? "—"}</span></div>
+                            <div className="text-[8px] text-gray-400 truncate mt-1">Classification: {copernicusData?.indexTimeline?.classification ?? "—"}</div>
                           </div>
                         </div>
 
@@ -999,9 +1019,9 @@ export default function DiagnosticAnalytics({
                             <span className="text-[11px] font-bold text-gray-800 block">Hydrologic Watershed</span>
                           </div>
                           <div className="mt-2 text-[10px] text-gray-600 font-mono space-y-0.5">
-                            <div className="truncate text-slate-800 font-bold">{usgsData?.watershed?.name ?? "Upper River Basin"}</div>
-                            <div>HUC12: <span className="font-bold text-slate-700">{usgsData?.watershed?.hydrologicUnitCode12 ?? "07110001"}</span></div>
-                            <div>Drainage: <span className="font-bold text-slate-700">{usgsData?.watershed?.drainageScaleSqMiles ?? 3450} sq mi</span></div>
+                            <div className="truncate text-slate-800 font-bold">{usgsData?.watershed?.name ?? "—"}</div>
+                            <div>HUC12: <span className="font-bold text-slate-700">{usgsData?.watershed?.hydrologicUnitCode12 ?? "—"}</span></div>
+                            <div>Drainage: <span className="font-bold text-slate-700">{usgsData?.watershed?.drainageScaleSqMiles != null ? `${usgsData.watershed.drainageScaleSqMiles} sq mi` : "—"}</span></div>
                           </div>
                         </div>
 
@@ -1013,11 +1033,11 @@ export default function DiagnosticAnalytics({
                           </div>
                           <div className="mt-2 text-[10px] text-gray-600 font-mono space-y-0.5">
                             <div>Variety: <span className="font-bold text-indigo-700">{macroData?.requestedCrop ?? activeParcel.cropType}</span></div>
-                            <div>Calories: <span className="font-bold text-slate-800">{macroData?.nutrientsPer100g?.calories ?? 65} kcal</span></div>
+                            <div>Calories: <span className="font-bold text-slate-800">{macroData?.nutrientsPer100g?.calories != null ? `${macroData.nutrientsPer100g.calories} kcal` : "—"}</span></div>
                             <div className="flex gap-1.5 text-[8px] text-gray-400 mt-1">
-                              <span>Pr: {macroData?.nutrientsPer100g?.proteinGrams ?? 1.2}g</span>
-                              <span>Cb: {macroData?.nutrientsPer100g?.carbsGrams ?? 14.5}g</span>
-                              <span>Fb: {macroData?.nutrientsPer100g?.fiberGrams ?? 1.8}g</span>
+                              <span>Pr: {macroData?.nutrientsPer100g?.proteinGrams ?? "—"}g</span>
+                              <span>Cb: {macroData?.nutrientsPer100g?.carbsGrams ?? "—"}g</span>
+                              <span>Fb: {macroData?.nutrientsPer100g?.fiberGrams ?? "—"}g</span>
                             </div>
                           </div>
                         </div>
@@ -1029,9 +1049,9 @@ export default function DiagnosticAnalytics({
                             <span className="text-[11px] font-bold text-gray-800 block">Convective Layer Height</span>
                           </div>
                           <div className="mt-2 text-[10px] text-gray-600 font-mono space-y-0.5">
-                            <div>PBL height: <span className="font-bold text-slate-800">{streamData?.boundaryLayerHeightMeters ?? 820}m</span></div>
-                            <div>Wind gust: <span className="font-bold text-slate-800">{streamData?.windGustsAt10mMeterPerSec ?? 11.8} m/s</span></div>
-                            <div className="text-[8px] text-gray-400 truncate mt-1">Convective state: {streamData?.thermalTurbulenceState ?? "Stable"}</div>
+                            <div>PBL height: <span className="font-bold text-slate-800">{streamData?.boundaryLayerHeightMeters != null ? `${streamData.boundaryLayerHeightMeters}m` : "—"}</span></div>
+                            <div>Wind gust: <span className="font-bold text-slate-800">{streamData?.windGustsAt10mMeterPerSec != null ? `${streamData.windGustsAt10mMeterPerSec} m/s` : "—"}</span></div>
+                            <div className="text-[8px] text-gray-400 truncate mt-1">Convective state: {streamData?.thermalTurbulenceState ?? "—"}</div>
                           </div>
                         </div>
 
@@ -1042,9 +1062,9 @@ export default function DiagnosticAnalytics({
                             <span className="text-[11px] font-bold text-gray-800 block">Slope & Altimeter Index</span>
                           </div>
                           <div className="mt-2 text-[10px] text-gray-600 font-mono space-y-0.5">
-                            <div>Elevation: <span className="font-bold text-slate-800">{topoData?.elevationMeters ?? 180}m</span></div>
-                            <div>Slope angle: <span className="font-bold text-slate-800">{topoData?.estimatedSlopeDegrees ?? 4.5}°</span></div>
-                            <div className="text-[8px] text-gray-400 truncate mt-1">Geo-drainage: {topoData?.drainageCategory ?? "Well"}</div>
+                            <div>Elevation: <span className="font-bold text-slate-800">{topoData?.elevationMeters != null ? `${topoData.elevationMeters}m` : "—"}</span></div>
+                            <div>Slope angle: <span className="font-bold text-slate-800">{topoData?.estimatedSlopeDegrees != null ? `${topoData.estimatedSlopeDegrees}°` : "—"}</span></div>
+                            <div className="text-[8px] text-gray-400 truncate mt-1">Geo-drainage: {topoData?.drainageCategory ?? "—"}</div>
                           </div>
                         </div>
 
@@ -1055,7 +1075,7 @@ export default function DiagnosticAnalytics({
                             <span className="text-[11px] font-bold text-gray-800 block">National Canopy Percent</span>
                           </div>
                           <div className="mt-2 text-[10px] text-gray-600 font-mono space-y-0.5">
-                            <div>Forest area: <span className="font-bold text-rose-700">{wbData?.forestAreaPercent ?? 33.5}%</span></div>
+                            <div>Forest area: <span className="font-bold text-rose-700">{wbData?.forestAreaPercent != null ? `${wbData.forestAreaPercent}%` : "—"}</span></div>
                             <div>Country: <span className="font-bold text-slate-800">{wbData?.countryName ?? "United States"}</span></div>
                             <div className="text-[8px] text-gray-400 truncate mt-1">Ref footprint: {wbData?.countryCode ?? "US"}</div>
                           </div>
@@ -1300,9 +1320,9 @@ export default function DiagnosticAnalytics({
               <div className="space-y-3">
                 {warnings.map((p) => {
                   let reason = "";
-                  if (p.soilMoisture < 35) reason = t("dashboard.reasonSoilDry", "Extreme soil dryness. Severe water stress curve triggered (NDWI sub-optimal).");
-                  else if (p.ndviValue < 0.45) reason = t("dashboard.reasonBiomass", "Sub-optimal vegetative biomass index. Leaf chlorosis risk flagged.");
-                  else if (p.soilPH < 5.5) reason = t("dashboard.reasonAcidification", "Critical soil acidification. Heavy metallic salt blockages present.");
+                  if (p.soilMoisture !== null && p.soilMoisture < 35) reason = t("dashboard.reasonSoilDry", "Extreme soil dryness. Severe water stress curve triggered (NDWI sub-optimal).");
+                  else if (p.ndviValue !== null && p.ndviValue < 0.45) reason = t("dashboard.reasonBiomass", "Sub-optimal vegetative biomass index. Leaf chlorosis risk flagged.");
+                  else if (p.soilPH !== null && p.soilPH < 5.5) reason = t("dashboard.reasonAcidification", "Critical soil acidification. Heavy metallic salt blockages present.");
 
                   return (
                     <div key={p.id} className="border border-red-100 bg-red-50/40 p-4.5 rounded-2xl flex items-start gap-3 justify-between">

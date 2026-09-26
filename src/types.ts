@@ -9,8 +9,8 @@ export interface Parcel {
   cropType: string;
   area: number; // area
   farmSize: number; // farmSize
-  soilMoisture: number; // percentage
-  predictedYield: number; // tonnes per hectare
+  soilMoisture: number | null; // percentage
+  predictedYield: number | null; // tonnes per hectare
   lat: number; // lat
   lng: number; // lng
   latitude: number; // latitude
@@ -21,16 +21,16 @@ export interface Parcel {
   lastUpdated: string;
   userId: string;
   ownerId: string;
-  ndvi: number; // NDVI Index
-  ndviValue: number; // Alternate NDVI
-  ndwiValue: number;
-  cropHeight: number; // in cm
+  ndvi: number | null; // NDVI Index
+  ndviValue: number | null; // Alternate NDVI
+  ndwiValue: number | null;
+  cropHeight: number | null; // in cm
   soilType: string;
-  soilPH: number;
+  soilPH: number | null;
   nitrogen: string;
   plantingMonth: string;
-  costPerHectare: number;
-  marketPricePerTon: number;
+  costPerHectare: number | null;
+  marketPricePerTon: number | null;
   customImage: string | null;
 
   // Real SoilGrids Global API records

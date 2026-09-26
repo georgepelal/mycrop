@@ -14,12 +14,21 @@ interface GddData {
   longitude: number;
   crop: string;
   baseTemp: number;
-  targetGdd: number;
+  // Only set for corn, where a season requirement is well established.
+  targetGdd: number | null;
   dates: string[];
   dailyGdd: number[];
   cumulativeGdd: number[];
-  phenologicalPhase: string;
-  daysToHarvest: number;
+  // Where the running total starts: the planting date, or the first day of
+  // the window when no planting date was given.
+  accumulatedSince: string;
+  sincePlanting: boolean;
+  observedThrough: string;
+  observedGdd: number;
+  // Null unless counted from planting (and, for stages, the crop is corn).
+  phenologicalPhase: string | null;
+  daysToHarvest: number | null;
+  phenologyFormula: string;
   isLiveGdd: boolean;
 }
 
@@ -30,6 +39,7 @@ export default function GrowingDegreeDays({ onNavigate }: GrowingDegreeDaysProps
   const [locationName, setLocationName] = useState("");
   const [showRawJSON, setShowRawJSON] = useState(false);
   const [selectedCrop, setSelectedCrop] = useState("corn");
+  const [plantingDate, setPlantingDate] = useState("");
 
   const availableCrops = [
     { id: "corn", name: "Corn (Maize)" },
@@ -38,7 +48,7 @@ export default function GrowingDegreeDays({ onNavigate }: GrowingDegreeDaysProps
     { id: "cotton", name: "Cotton" }
   ];
 
-  const fetchData = async (lat: number, lng: number, name: string, crop: string) => {
+  const fetchData = async (lat: number, lng: number, name: string, crop: string, planted = plantingDate) => {
     setLoading(true);
     setError(null);
     setLocationName(name);
@@ -46,7 +56,7 @@ export default function GrowingDegreeDays({ onNavigate }: GrowingDegreeDaysProps
       const response = await fetch("/api/growing-degree-days", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lat, lng, crop })
+        body: JSON.stringify({ lat, lng, crop, plantingDate: planted || undefined })
       });
 
       if (!response.ok) {
@@ -111,6 +121,17 @@ export default function GrowingDegreeDays({ onNavigate }: GrowingDegreeDaysProps
         </div>
         
         <div className="flex items-center gap-3 w-full md:w-auto">
+          <input
+            type="date"
+            value={plantingDate}
+            max={new Date().toISOString().split("T")[0]}
+            title="Planting date (optional) — GDD is counted from here"
+            onChange={(e) => {
+              setPlantingDate(e.target.value);
+              if (data && locationName) fetchData(data.latitude, data.longitude, locationName, selectedCrop, e.target.value);
+            }}
+            className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white shadow-sm outline-none"
+          />
           <select 
             value={selectedCrop}
             onChange={handleCropChange}
@@ -136,7 +157,7 @@ export default function GrowingDegreeDays({ onNavigate }: GrowingDegreeDaysProps
             Select a Location & Crop
           </h3>
           <p className="text-sm text-slate-500 max-w-md">
-            Search above or select a different crop type to evaluate targeted thermodynamic thermal accumulations driving physiological development over the next 7 days.
+            Pick a crop and, ideally, its planting date, then search a location. Heat units are counted from planting using observed temperatures plus the 7-day forecast.
           </p>
         </div>
       )}
@@ -164,11 +185,15 @@ export default function GrowingDegreeDays({ onNavigate }: GrowingDegreeDaysProps
                 Current Plant Phase
               </div>
               <div className="text-xl font-bold text-emerald-600 truncate leading-tight">
-                {data.phenologicalPhase}
+                {data.phenologicalPhase ?? "—"}
               </div>
               <div className="text-[10px] text-slate-500 mt-2 flex items-center gap-1">
                 <Leaf className="w-3.5 h-3.5 text-emerald-500" />
-                Sourced from target growth matrices
+                {data.phenologicalPhase
+                  ? "Typical corn stage thresholds"
+                  : data.sincePlanting
+                    ? "Stage thresholds are only published here for corn"
+                    : "Set a planting date (within 92 days) to see the stage"}
               </div>
             </div>
 
@@ -177,11 +202,15 @@ export default function GrowingDegreeDays({ onNavigate }: GrowingDegreeDaysProps
                 Accumulated Index
               </div>
               <div className="text-2xl font-black text-amber-500">
-                {data.cumulativeGdd[0]} <span className="text-sm font-semibold text-slate-400">/ {data.targetGdd}</span>
+                {data.observedGdd}
+                {data.targetGdd !== null && data.sincePlanting && (
+                  <span className="text-sm font-semibold text-slate-400"> / {data.targetGdd}</span>
+                )}
               </div>
               <div className="text-[10px] text-slate-500 mt-2 flex items-center gap-1">
                 <ThermometerSun className="w-3.5 h-3.5 text-amber-500" />
-                Base Temp: {data.baseTemp}°C
+                Base {data.baseTemp}°C · since {data.accumulatedSince}
+                {data.sincePlanting ? " (planting)" : " (no planting date)"}
               </div>
             </div>
 
@@ -190,11 +219,11 @@ export default function GrowingDegreeDays({ onNavigate }: GrowingDegreeDaysProps
                 Est. Physiological Maturity
               </div>
               <div className="text-2xl font-black text-blue-600 truncate">
-                {data.daysToHarvest < 0 ? "Reached" : `~${data.daysToHarvest} Days`}
+                {data.daysToHarvest === null ? "—" : data.daysToHarvest < 0 ? "Reached" : `~${data.daysToHarvest} Days`}
               </div>
               <div className="text-[10px] text-slate-500 mt-2 flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5 text-blue-500" />
-                Estimated by matching remaining GDD
+                {data.daysToHarvest === null ? "Needs corn + a planting date" : "At the current forecast GDD rate"}
               </div>
             </div>
           </div>
@@ -203,8 +232,7 @@ export default function GrowingDegreeDays({ onNavigate }: GrowingDegreeDaysProps
             <Info className="w-5 h-5 shrink-0 mt-0.5 text-amber-600" />
             <div className="text-sm leading-relaxed">
               <strong>Calculation Method: </strong> 
-              GDD calculates daily heat value ((Tmax + Tmin) / 2) minus a crop-specific baseline temperature ({data.baseTemp}°C for {data.crop}).
-              This models physiological time rather than calendar time, projecting maturity and vegetative phase shifts precisely.
+              {data.phenologyFormula} Days up to {data.observedThrough} are observed; the rest is the 7-day forecast.
             </div>
           </div>
 

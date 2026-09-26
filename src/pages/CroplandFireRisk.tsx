@@ -99,7 +99,7 @@ export default function CroplandFireRisk({ onNavigate }: CroplandFireRiskProps) 
               Cropland Fire Risk
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              Keetch-Byram Drought Index (KBDI) and dynamic flammability potential meters.
+              A heuristic dryness score (on the familiar 0-800 KBDI scale) and fire-weather conditions.
             </p>
           </div>
         </div>
@@ -124,7 +124,7 @@ export default function CroplandFireRisk({ onNavigate }: CroplandFireRiskProps) 
             className="w-full md:w-48 px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 text-slate-800"
             placeholder="e.g. 850"
           />
-          <span className="text-xs text-slate-400 font-medium">Used for direct KBDI soil-moisture calibrations.</span>
+          <span className="text-xs text-slate-400 font-medium">Your long-term annual rainfall (mm) — wetter climates score lower.</span>
         </div>
       </div>
 
@@ -188,7 +188,7 @@ export default function CroplandFireRisk({ onNavigate }: CroplandFireRiskProps) 
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm col-span-1 flex flex-col justify-between">
               <div>
                 <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                  Keetch-Byram Drought Index (KBDI)
+                  Dryness Score (heuristic, 0-800)
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className={`text-5xl font-black ${getKbdiTextClass(data.kbdiScore)}`}>

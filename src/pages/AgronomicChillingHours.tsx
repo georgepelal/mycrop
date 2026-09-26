@@ -13,7 +13,10 @@ interface ChillingData {
   times: string[];
   chillingHoursDaily: number[];
   cumulativeChilling: number[];
+  // Includes the forecast days; observedTotal is chill that has actually happened.
   cumulativeTotal: number;
+  observedTotal: number;
+  countedFrom: string;
   chillingModelDescription: string;
   vernalizationStatus: string;
   apiCitation: string;
@@ -131,21 +134,24 @@ export default function AgronomicChillingHours({ onNavigate }: ChillingHoursProp
              <div className="bg-sky-900 border border-sky-800 rounded-2xl p-6 shadow-xl relative overflow-hidden text-center flex flex-col justify-center min-h-[240px]">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500/20 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
                 <div className="flex justify-center mb-4 relative z-10"><Snowflake className="w-10 h-10 text-sky-300" /></div>
-                <div className="text-sky-200 font-bold uppercase tracking-widest text-xs mb-2 relative z-10">Forecasted Chilling Accumulation</div>
+                <div className="text-sky-200 font-bold uppercase tracking-widest text-xs mb-2 relative z-10">Chill Hours Since {data.countedFrom}</div>
                 <div className="text-6xl font-black text-white flex justify-center items-baseline gap-1 relative z-10">
-                   {data.cumulativeTotal.toFixed(1)} <span className="text-2xl text-sky-200/60 font-medium tracking-normal">Hours</span>
+                   {data.observedTotal} <span className="text-2xl text-sky-200/60 font-medium tracking-normal">Hours</span>
+                </div>
+                <div className="text-sky-100/70 text-xs mt-3 relative z-10">
+                   {data.cumulativeTotal} h including the 7-day forecast
                 </div>
              </div>
 
              <div className="bg-white border rounded-2xl p-6 shadow-sm flex flex-col justify-center min-h-[240px] text-center md:text-left items-center md:items-start relative overflow-hidden">
                 <div className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-4 flex items-center gap-2 relative z-10">
-                  <Gauge className="w-4 h-4" /> Vernalization Status
+                  <Gauge className="w-4 h-4" /> Dormancy Chill So Far
                 </div>
-                <h3 className="text-4xl font-black text-indigo-600 leading-tight mb-2 relative z-10 flex items-center gap-2">
+                <h3 className="text-xl font-bold text-indigo-600 leading-snug mb-2 relative z-10 flex items-center gap-2">
                   {data.vernalizationStatus} 
                 </h3>
                 <div className="text-slate-500 text-sm relative z-10 uppercase tracking-wider font-semibold">
-                  Standard threshold evaluated at 0°C to 7.2°C bracket.
+                  Hours between 0°C and 7.2°C, from hourly temperatures.
                 </div>
              </div>
           </div>

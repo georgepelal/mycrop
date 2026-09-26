@@ -93,7 +93,10 @@ export default function ClimateProjections({ onNavigate }: ClimateProjectionsPro
   const rainThreshInMm = rainUnit === "inch" ? parseFloat((rainThreshold / 0.0393701).toFixed(1)) : rainThreshold;
 
   // Filter raw data and map with calculated units
-  const rawMonths = data?.monthlyData || [];
+  // A month the model returned nothing for is left out, never charted as 0.
+  const rawMonths = (data?.monthlyData || []).filter(
+    (m) => m.tempMax !== null && m.tempMin !== null && m.precipitation !== null
+  );
   
   // Apply Date period filtering
   const filteredMonths = rawMonths.filter((item) => {
@@ -149,7 +152,7 @@ export default function ClimateProjections({ onNavigate }: ClimateProjectionsPro
               {t("projections.headerTitle", "Long-Term Climate Projections")}
             </h1>
             <p className="text-sm text-gray-500">
-              {t("projections.headerSubtitle", "Global climate simulation models for the year 2050 (CMIP6)")}
+              {t("projections.headerSubtitle", "Monthly averages for 2041–2050 from one high-resolution CMIP6 model")}
             </p>
           </div>
         </div>
@@ -226,7 +229,7 @@ export default function ClimateProjections({ onNavigate }: ClimateProjectionsPro
             <Info className="w-5 h-5 shrink-0 mt-0.5 text-purple-600" />
             <div className="text-sm leading-relaxed">
               <strong>{t("projections.outlookTitle", "Future Climate Outlook for")} {locationName}:</strong>{" "}
-              {t("projections.outlookExplanation", "Projections show monthly simulation bounds calculated using the CMIP6 high-radiative-forcing scenarios (approx. +1.8°C to +2.4°C baseline global temperature increase by 2050). Under this model, seasonal curves migrate towards warmer peaks and more volatile rainfall spikes, impacting crop growth cycles and water demands.")}
+              {t("projections.outlookExplanation", "These are monthly averages for 2041–2050 from a single CMIP6 HighResMIP model (EC-Earth3P-HR) via Open-Meteo, compared with the same model's 1991–2000 run. One model is one possible future, not a forecast — other models can differ by a degree or more.")}
             </div>
           </div>
 
@@ -313,7 +316,7 @@ export default function ClimateProjections({ onNavigate }: ClimateProjectionsPro
               <div className="text-xs">
                 <div className="font-bold text-gray-700 flex items-center gap-1.5 mb-1">
                   <span className="inline-block w-2.5 h-2.5 rounded-full bg-orange-400"></span>
-                  {t("projections.deficitWarning", "Simulated Drought Deficits")} ({droughtMonths.length})
+                  {t("projections.deficitWarning", "Projected dry months")} ({droughtMonths.length})
                 </div>
                 {droughtMonths.length > 0 ? (
                   <p className="text-gray-500">
@@ -469,7 +472,7 @@ export default function ClimateProjections({ onNavigate }: ClimateProjectionsPro
               <div className="flex justify-between items-center mb-4">
                 <div>
                   <h4 className="font-bold text-gray-800 text-sm">{t("projections.rawPayloadTitle", "Raw API Response Payload")}</h4>
-                  <p className="text-xs text-gray-400">{t("projections.rawPayloadSubtitle", "Contains 100% of underlying Open-Meteo & CMIP6 model simulation attributes")}</p>
+                  <p className="text-xs text-gray-400">{t("projections.rawPayloadSubtitle", "The response from the server, as returned")}</p>
                 </div>
                 <button 
                   onClick={() => setShowRawJSON(!showRawJSON)}

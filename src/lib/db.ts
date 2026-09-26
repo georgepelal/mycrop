@@ -39,6 +39,44 @@ export async function getParcelsForUser(uid: string): Promise<Parcel[]> {
   }
 }
 
+// Readings are stored as entered or measured; a missing one stays null.
+// These writers used to substitute pH 6.5, NDVI 0.5, 50% moisture, $900/ha,
+// $200/t and a Chicago-area location, which the app then displayed and fed
+// into advice as though they were the farmer's own data.
+function reading(v: unknown): number | null {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function parcelPayload(uid: string, parcel: Parcel) {
+  return {
+    ...parcel,
+    ownerId: uid,
+    soilType: parcel.soilType || null,
+    soilPH: reading(parcel.soilPH),
+    nitrogen: parcel.nitrogen || null,
+    plantingMonth: parcel.plantingMonth || null,
+    ndvi: reading(parcel.ndvi),
+    ndviValue: reading(parcel.ndviValue),
+    ndwiValue: reading(parcel.ndwiValue),
+    soilMoisture: reading(parcel.soilMoisture),
+    predictedYield: reading(parcel.predictedYield),
+    cropHeight: reading(parcel.cropHeight),
+    costPerHectare: reading(parcel.costPerHectare),
+    marketPricePerTon: reading(parcel.marketPricePerTon),
+    customImage: parcel.customImage || null,
+    latitude: reading(parcel.latitude),
+    longitude: reading(parcel.longitude),
+    soilGridsClay: parcel.soilGridsClay ?? null,
+    soilGridsSand: parcel.soilGridsSand ?? null,
+    soilGridsSilt: parcel.soilGridsSilt ?? null,
+    soilGridsSoc: parcel.soilGridsSoc ?? null,
+    soilGridsNitrogenValue: parcel.soilGridsNitrogenValue ?? null,
+    isRealSoilGridsUsed: parcel.isRealSoilGridsUsed ?? false,
+  };
+}
+
 /**
  * Creates a brand new agricultural parcel in the database for a specific user.
  */
@@ -46,33 +84,7 @@ export async function createParcelForUser(uid: string, parcel: Parcel): Promise<
   const docId = parcel.id;
   try {
     const ref = doc(db, PATH_PARCELS, docId);
-    const payload = {
-      ...parcel,
-      ownerId: uid,
-      // Fallback defaults for optional properties so they are defined
-      soilType: parcel.soilType || "Loamy",
-      soilPH: Number(parcel.soilPH ?? 6.5),
-      nitrogen: parcel.nitrogen || "Optimal",
-      plantingMonth: parcel.plantingMonth || "May",
-      ndviValue: Number(parcel.ndviValue ?? 0.5),
-      ndwiValue: Number(parcel.ndwiValue ?? 0.5),
-      soilMoisture: Number(parcel.soilMoisture ?? 50),
-      costPerHectare: Number(parcel.costPerHectare ?? 900),
-      marketPricePerTon: Number(parcel.marketPricePerTon ?? 200),
-      customImage: parcel.customImage || null,
-      latitude: Number(parcel.latitude ?? 41.890),
-      longitude: Number(parcel.longitude ?? -87.954),
-      lastUpdated: parcel.lastUpdated || new Date().toLocaleDateString(),
-
-      // SoilGrids telemetry fields defaults
-      soilGridsClay: parcel.soilGridsClay !== undefined ? parcel.soilGridsClay : null,
-      soilGridsSand: parcel.soilGridsSand !== undefined ? parcel.soilGridsSand : null,
-      soilGridsSilt: parcel.soilGridsSilt !== undefined ? parcel.soilGridsSilt : null,
-      soilGridsSoc: parcel.soilGridsSoc !== undefined ? parcel.soilGridsSoc : null,
-      soilGridsNitrogenValue: parcel.soilGridsNitrogenValue !== undefined ? parcel.soilGridsNitrogenValue : null,
-      isRealSoilGridsUsed: parcel.isRealSoilGridsUsed !== undefined ? parcel.isRealSoilGridsUsed : false
-    };
-    await setDoc(ref, payload);
+    await setDoc(ref, { ...parcelPayload(uid, parcel), lastUpdated: parcel.lastUpdated || new Date().toLocaleDateString() });
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, `${PATH_PARCELS}/${docId}`);
   }
@@ -85,32 +97,7 @@ export async function updateParcelForUser(uid: string, parcel: Parcel): Promise<
   const docId = parcel.id;
   try {
     const ref = doc(db, PATH_PARCELS, docId);
-    const payload = {
-      ...parcel,
-      ownerId: uid,
-      soilType: parcel.soilType || "Loamy",
-      soilPH: Number(parcel.soilPH ?? 6.5),
-      nitrogen: parcel.nitrogen || "Optimal",
-      plantingMonth: parcel.plantingMonth || "May",
-      ndviValue: Number(parcel.ndviValue ?? 0.5),
-      ndwiValue: Number(parcel.ndwiValue ?? 0.5),
-      soilMoisture: Number(parcel.soilMoisture ?? 50),
-      costPerHectare: Number(parcel.costPerHectare ?? 900),
-      marketPricePerTon: Number(parcel.marketPricePerTon ?? 200),
-      customImage: parcel.customImage || null,
-      latitude: Number(parcel.latitude ?? 41.890),
-      longitude: Number(parcel.longitude ?? -87.954),
-      lastUpdated: new Date().toLocaleDateString(),
-
-      // SoilGrids telemetry fields defaults
-      soilGridsClay: parcel.soilGridsClay !== undefined ? parcel.soilGridsClay : null,
-      soilGridsSand: parcel.soilGridsSand !== undefined ? parcel.soilGridsSand : null,
-      soilGridsSilt: parcel.soilGridsSilt !== undefined ? parcel.soilGridsSilt : null,
-      soilGridsSoc: parcel.soilGridsSoc !== undefined ? parcel.soilGridsSoc : null,
-      soilGridsNitrogenValue: parcel.soilGridsNitrogenValue !== undefined ? parcel.soilGridsNitrogenValue : null,
-      isRealSoilGridsUsed: parcel.isRealSoilGridsUsed !== undefined ? parcel.isRealSoilGridsUsed : false
-    };
-    await setDoc(ref, payload);
+    await setDoc(ref, { ...parcelPayload(uid, parcel), lastUpdated: new Date().toLocaleDateString() });
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, `${PATH_PARCELS}/${docId}`);
   }

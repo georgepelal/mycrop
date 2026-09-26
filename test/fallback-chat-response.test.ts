@@ -30,9 +30,17 @@ describe('generateFallbackChatResponse', () => {
     expect(reply).toMatch(/Halt all irrigation/);
   });
 
-  it('falls back to sensible defaults with no active parcel', () => {
+  it('says a reading is missing instead of inventing one', () => {
     const reply = generateFallbackChatResponse('nitrogen levels?', null);
-    expect(reply).toMatch(/Optimal/);
-    expect(reply).toMatch(/your crops/);
+    expect(reply).not.toMatch(/Optimal/);
+    expect(reply).toMatch(/no nitrogen status recorded/);
+    const ph = generateFallbackChatResponse('how is my ph?', { name: 'North' });
+    expect(ph).not.toMatch(/6\.5/);
+    expect(ph).toMatch(/no soil pH recorded/);
+  });
+
+  it('marks every offline reply as rule-of-thumb', () => {
+    const reply = generateFallbackChatResponse('hello', { soilPH: 6.8 });
+    expect(reply).toMatch(/rule-of-thumb/);
   });
 });

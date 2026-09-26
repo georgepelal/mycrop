@@ -68,7 +68,7 @@ export default function SoilSalinityCapillary({ onNavigate }: SoilSalinityCapill
 
   const chartData = data?.dates.map((date, index) => ({
     date: new Date(date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }),
-    "Salinity ECe (dS/m)": data.electricalConductivityDsm[index],
+    "Salinity index (illustrative)": data.electricalConductivityDsm[index],
     "Capillary Rise (mm/day)": data.capillaryRiseMm[index]
   })) || [];
 
@@ -134,14 +134,14 @@ export default function SoilSalinityCapillary({ onNavigate }: SoilSalinityCapill
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm col-span-1 flex flex-col">
               <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
-                Maximum Electrical Conductivity (ECe)
+                Salinity Pressure Index (illustrative)
               </div>
               <div className={`text-4xl md:text-5xl font-black py-2 ${
                  data.maxEce > 3.0 ? 'text-rose-600' :
                  data.maxEce > 2.0 ? 'text-amber-500' :
                  'text-indigo-600'
               }`}>
-                {data.maxEce.toFixed(1)} <span className="text-xl text-slate-400 font-bold">dS/m</span>
+                {data.maxEce.toFixed(1)} <span className="text-xs text-slate-400 font-semibold">index, not a measurement</span>
               </div>
               <div className="text-[10px] text-slate-500 mt-auto flex items-center gap-1">
                 <Plus className="w-3.5 h-3.5 text-indigo-500" />
@@ -206,7 +206,7 @@ export default function SoilSalinityCapillary({ onNavigate }: SoilSalinityCapill
                     labelStyle={{ fontSize: '12px', color: '#64748B', marginBottom: '4px' }}
                   />
                   <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                  <Area yAxisId="left" type="monotone" dataKey="Salinity ECe (dS/m)" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorEce)" />
+                  <Area yAxisId="left" type="monotone" dataKey="Salinity index (illustrative)" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorEce)" />
                   <Area yAxisId="right" type="step" dataKey="Capillary Rise (mm/day)" stroke="#06b6d4" strokeWidth={2} fillOpacity={1} fill="url(#colorRise)" />
                 </AreaChart>
               </ResponsiveContainer>

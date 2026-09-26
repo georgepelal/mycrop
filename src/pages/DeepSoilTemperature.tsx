@@ -156,17 +156,33 @@ export default function DeepSoilTemperature({
           throw new Error("No sub-surface soil data available for this location (e.g. urbanized area or outside coverage).");
         }
 
+        // Keep only the hours where every layer has a real value. Missing
+        // hours used to be read as 0 °C / 0% moisture further down.
+        const keys = [
+          "soil_temperature_0_to_7cm", "soil_temperature_7_to_28cm", "soil_temperature_28_to_100cm", "soil_temperature_100_to_255cm",
+          "soil_moisture_0_to_7cm", "soil_moisture_7_to_28cm", "soil_moisture_28_to_100cm", "soil_moisture_100_to_255cm",
+        ];
+        const series: unknown[][] = keys.map((k) => (Array.isArray(json.hourly[k]) ? json.hourly[k] : []));
+        let n = Math.min(json.hourly.time.length, ...series.map((a) => a.length));
+        for (let i = 0; i < n; i++) {
+          if (!series.every((a) => typeof a[i] === "number")) { n = i; break; }
+        }
+        if (n === 0) {
+          throw new Error("Open-Meteo returned incomplete soil layers for this location.");
+        }
+        const cut = (a: unknown[]) => a.slice(0, n) as number[];
+
         if (active) {
           const parsedData = {
-            times: json.hourly.time ?? [],
-            temp_0_7: json.hourly.soil_temperature_0_to_7cm ?? [],
-            temp_7_28: json.hourly.soil_temperature_7_to_28cm ?? [],
-            temp_28_100: json.hourly.soil_temperature_28_to_100cm ?? [],
-            temp_100_255: json.hourly.soil_temperature_100_to_255cm ?? [],
-            moist_0_7: json.hourly.soil_moisture_0_to_7cm ?? [],
-            moist_7_28: json.hourly.soil_moisture_7_to_28cm ?? [],
-            moist_28_100: json.hourly.soil_moisture_28_to_100cm ?? [],
-            moist_100_255: json.hourly.soil_moisture_100_to_255cm ?? [],
+            times: json.hourly.time.slice(0, n),
+            temp_0_7: cut(series[0]),
+            temp_7_28: cut(series[1]),
+            temp_28_100: cut(series[2]),
+            temp_100_255: cut(series[3]),
+            moist_0_7: cut(series[4]),
+            moist_7_28: cut(series[5]),
+            moist_28_100: cut(series[6]),
+            moist_100_255: cut(series[7]),
           };
           setSoilData(parsedData);
           setCachedTempData(fetchLat, fetchLng, parsedData);

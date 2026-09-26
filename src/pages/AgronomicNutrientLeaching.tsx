@@ -122,7 +122,7 @@ export default function AgronomicNutrientLeaching({ onNavigate }: AgronomicNutri
         <div className="h-96 flex flex-col items-center justify-center border border-gray-100 rounded-3xl bg-white shadow-sm">
           <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mb-4" />
           <p className="text-sm font-medium text-gray-500">
-            Simulating NPK transport equations against hydro-porosity limits...
+            Fetching rain and soil moisture forecast...
           </p>
         </div>
       )}

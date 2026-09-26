@@ -9,7 +9,9 @@ service cloud.firestore {
 
     // Secure Parcels Collection
     match /parcels/{parcelId} {
-      allow read: if request.auth != null && (resource.data.ownerId == request.auth.uid || resource.data.userId == request.auth.uid);
+      // ownerId is the only ownership field. userId is set by the client and was
+      // never checked on create, so it must not grant read access.
+      allow read: if request.auth != null && resource.data.ownerId == request.auth.uid;
       
       allow create: if request.auth != null
                     && request.resource.data.ownerId == request.auth.uid
@@ -36,12 +38,10 @@ service cloud.firestore {
     // Secure Crops Collection
     match /crops/{cropId} {
       allow read, list: if request.auth != null;
-      allow create, update: if request.auth != null
-                            && request.resource.data.name is string
-                            && request.resource.data.name.size() <= 100
-                            && request.resource.data.icon is string
-                            && request.resource.data.icon.size() <= 10;
-      allow delete: if false;
+      // Shared catalogue: any signed-in user could previously overwrite any crop
+      // for everyone. Nothing in the app writes it; seed it from the console
+      // or the Admin SDK (which bypasses rules).
+      allow write: if false;
     }
   }
 }

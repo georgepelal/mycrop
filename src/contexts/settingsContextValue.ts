@@ -25,7 +25,7 @@ export interface SettingsContextType extends Settings {
 
   // High-performance conversions & formats
   formatArea: (hectares: number) => string;
-  formatYield: (tHa: number) => string;
+  formatYield: (tHa: number | null) => string;
   convertTemp: (celsius: number) => number;
   convertRain: (mm: number) => number;
   convertElev: (m: number) => number;

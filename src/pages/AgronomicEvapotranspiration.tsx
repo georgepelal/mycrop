@@ -15,9 +15,11 @@ interface Et0Data {
   dates: string[];
   et0Values: number[];
   avgEt0: number;
-  soilMoisture0to10cm: number;
-  cropWaterStressIndex: number;
-  waterStressIndicator: "Adequate Moisture" | "Incipient Stress" | "Severe Wilting Susceptibility";
+  // Null when the model has no topsoil moisture for this point — shown as a
+  // dash, never an assumed value.
+  soilMoisture0to10cm: number | null;
+  cropWaterStressIndex: number | null;
+  waterStressIndicator: "Adequate Moisture" | "Incipient Stress" | "Severe Wilting Susceptibility" | null;
   isLiveAgro: boolean;
   faoDisclaimer: string;
 }
@@ -148,17 +150,19 @@ export default function AgronomicEvapotranspiration({ onNavigate }: AgronomicEva
                 Crop Water Stress Index
               </div>
               <div className={`text-4xl md:text-5xl font-black py-2 ${
+                data.cropWaterStressIndex === null ? 'text-slate-300' :
                 data.cropWaterStressIndex < 0.35 ? 'text-emerald-500' :
                 data.cropWaterStressIndex < 0.65 ? 'text-amber-500' : 'text-rose-600'
               }`}>
-                {data.cropWaterStressIndex.toFixed(2)}
+                {data.cropWaterStressIndex === null ? "—" : data.cropWaterStressIndex.toFixed(2)}
               </div>
               <div className="text-[10px] text-slate-500 mt-auto flex items-center gap-1">
                 <AlertTriangle className={`w-3.5 h-3.5 ${
+                  data.cropWaterStressIndex === null ? 'text-slate-300' :
                   data.cropWaterStressIndex < 0.35 ? 'text-emerald-500' :
                   data.cropWaterStressIndex < 0.65 ? 'text-amber-500' : 'text-rose-500'
                 }`} />
-                {data.waterStressIndicator}
+                {data.waterStressIndicator ?? "No soil moisture reading for this point"}
               </div>
             </div>
 
@@ -167,7 +171,7 @@ export default function AgronomicEvapotranspiration({ onNavigate }: AgronomicEva
                 Shallow Soil Moisture (0-10cm)
               </div>
               <div className="text-4xl md:text-5xl font-black text-blue-600 py-2">
-                {(data.soilMoisture0to10cm * 100).toFixed(1)}<span className="text-xl text-slate-400 font-bold">%</span>
+                {data.soilMoisture0to10cm === null ? "—" : (data.soilMoisture0to10cm * 100).toFixed(1)}<span className="text-xl text-slate-400 font-bold">%</span>
               </div>
               <div className="text-[10px] text-slate-500 mt-auto flex items-center gap-1">
                 <Droplets className="w-3.5 h-3.5 text-blue-500" />

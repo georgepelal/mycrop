@@ -7,8 +7,10 @@ interface CropAutoDetectionProps {
 }
 
 interface CropDetectionData {
-  detectedCrop: string;
-  confidence: number;
+  detectedCrop: string | null;
+  // Always null: neither the regional table nor the AI guess has a calibrated confidence.
+  confidence: number | null;
+  method: "regional-heuristic" | "ai-guess" | "none";
   explanation: string;
 }
 
@@ -68,10 +70,10 @@ export default function CropAutoDetection({ onNavigate }: CropAutoDetectionProps
           <div>
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
               <Scan className="w-7 h-7 text-emerald-500" />
-              Crop Auto-Detection
+              Regional Crop Guess
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              AI-driven multi-spectral classification indicating probable crop types by region.
+              A guess at the crops commonly grown in a region. It does not look at your field.
             </p>
           </div>
         </div>
@@ -100,7 +102,7 @@ export default function CropAutoDetection({ onNavigate }: CropAutoDetectionProps
         <div className="h-96 flex flex-col items-center justify-center border border-gray-100 rounded-3xl bg-white shadow-sm">
           <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mb-4" />
           <p className="text-sm font-medium text-gray-500">
-            Scanning regional multispectral data for crop signatures...
+            Looking up crops common in this region...
           </p>
         </div>
       )}
@@ -121,24 +123,24 @@ export default function CropAutoDetection({ onNavigate }: CropAutoDetectionProps
                 Primary Classification
               </div>
               <div className="text-4xl font-black text-emerald-600 truncate py-2">
-                {data.detectedCrop}
+                {data.detectedCrop ?? "—"}
               </div>
               <div className="text-[10px] text-slate-500 mt-2 flex items-center gap-1">
                 <Sprout className="w-3.5 h-3.5 text-emerald-500" />
-                Dominant Specie Match
+                Common in this region
               </div>
             </div>
 
             <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
               <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
-                Confidence Score
+                Method
               </div>
-              <div className="text-4xl font-black text-blue-600 flex items-center gap-2 py-2">
-                {(data.confidence * 100).toFixed(1)}%
+              <div className="text-2xl font-black text-blue-600 flex items-center gap-2 py-2">
+                {data.method === "ai-guess" ? "AI guess" : data.method === "regional-heuristic" ? "Regional table" : "No guess"}
               </div>
               <div className="text-[10px] text-slate-500 mt-2 flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" />
-                Algorithm Certainty
+                Not a reading of your field — no confidence score
               </div>
             </div>
             
@@ -147,7 +149,7 @@ export default function CropAutoDetection({ onNavigate }: CropAutoDetectionProps
           <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 flex gap-4 text-emerald-900">
             <Info className="w-6 h-6 shrink-0 mt-0.5 text-emerald-600" />
             <div className="text-base leading-relaxed">
-              <strong>Agronomical Match Explanation: </strong> 
+              <strong>Why: </strong> 
               {data.explanation}
             </div>
           </div>

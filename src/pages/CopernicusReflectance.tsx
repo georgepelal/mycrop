@@ -8,8 +8,9 @@ interface CopernicusReflectanceProps {
 
 interface IndexTimeline {
   ndvi: number;
+  // Gao NDWI: (NIR − SWIR) / (NIR + SWIR), canopy water content.
   ndwi: number;
-  bareSoilReflectance: number;
+  swir1Reflectance: number;
   classification: string;
 }
 
@@ -17,11 +18,13 @@ interface ReflectanceData {
   latitude: number;
   longitude: number;
   isEstimate: boolean;
+  observedOn: string;
+  cloudFreePixelShare: number | null;
   indexTimeline: IndexTimeline;
   recommendedWavelengthsNano: {
     band8_NearInfrared: number;
     band4_Red: number;
-    band3_Green: number;
+    band11_Swir: number;
   };
   apiCitation: string;
 }
@@ -94,10 +97,10 @@ export default function CopernicusReflectance({ onNavigate }: CopernicusReflecta
           <div>
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
               <Satellite className="w-7 h-7 text-indigo-500" />
-              Reflectance Estimate
+              Sentinel-2 Reflectance
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              Location-based vegetation and soil optics estimate (not live satellite imagery).
+              Latest cloud-free Sentinel-2 pass over a point.
             </p>
           </div>
         </div>
@@ -117,7 +120,7 @@ export default function CopernicusReflectance({ onNavigate }: CopernicusReflecta
             Select a Location
           </h3>
           <p className="text-sm text-slate-500 max-w-md">
-            Get a location-based estimate of normalized difference vegetation and water indices.
+            Get NDVI and canopy water index from the most recent cloud-free Sentinel-2 image (last 30 days).
           </p>
         </div>
       )}
@@ -126,7 +129,7 @@ export default function CopernicusReflectance({ onNavigate }: CopernicusReflecta
         <div className="h-96 flex flex-col items-center justify-center border border-gray-100 rounded-3xl bg-white shadow-sm">
           <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mb-4" />
           <p className="text-sm font-medium text-gray-500">
-            Computing reflectance index estimate...
+            Querying Copernicus Data Space...
           </p>
         </div>
       )}
@@ -151,25 +154,25 @@ export default function CopernicusReflectance({ onNavigate }: CopernicusReflecta
                      <h3 className="font-bold text-xs uppercase tracking-widest">NDVI (Vegetation)</h3>
                   </div>
                   <div className="text-5xl font-black mb-2">{data.indexTimeline.ndvi.toFixed(2)}</div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider opacity-60">Optimum Health Base (0-1)</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider opacity-60">Observed {data.observedOn}</div>
                </div>
 
                <div className={`col-span-1 border rounded-xl p-5 flex flex-col justify-between ${getNdwiColor(data.indexTimeline.ndwi)} bg-opacity-10 shadow-inner`}>
                   <div className="flex items-center gap-2 mb-4 opacity-80">
                      <Droplets className="w-5 h-5" />
-                     <h3 className="font-bold text-xs uppercase tracking-widest">NDWI (Water)</h3>
+                     <h3 className="font-bold text-xs uppercase tracking-widest">NDWI (Canopy Water)</h3>
                   </div>
                   <div className="text-5xl font-black mb-2">{data.indexTimeline.ndwi.toFixed(2)}</div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider opacity-60">Canopy Moisture Base (-1-1)</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider opacity-60">NIR vs SWIR, −1 to 1</div>
                </div>
 
                <div className="col-span-1 bg-stone-50 border border-stone-200 text-stone-800 rounded-xl p-5 flex flex-col justify-between shadow-inner">
                   <div className="flex items-center gap-2 mb-4 opacity-60">
                      <Sun className="w-5 h-5" />
-                     <h3 className="font-bold text-xs uppercase tracking-widest text-stone-600">Salinity / Bare Soil</h3>
+                     <h3 className="font-bold text-xs uppercase tracking-widest text-stone-600">SWIR Reflectance (B11)</h3>
                   </div>
-                  <div className="text-5xl font-black mb-2 text-stone-700">{data.indexTimeline.bareSoilReflectance.toFixed(2)}</div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider opacity-50">Reflectance Interference</div>
+                  <div className="text-5xl font-black mb-2 text-stone-700">{data.indexTimeline.swir1Reflectance.toFixed(2)}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider opacity-50">{data.cloudFreePixelShare !== null ? `${Math.round(data.cloudFreePixelShare * 100)}% of pixels cloud-free` : "—"}</div>
                </div>
              </div>
 
@@ -193,17 +196,17 @@ export default function CopernicusReflectance({ onNavigate }: CopernicusReflecta
                      <div className="text-slate-300 font-mono text-sm font-semibold">{data.recommendedWavelengthsNano.band4_Red} nm</div>
                    </div>
                    <div className="text-center">
-                     <div className="text-slate-500 text-[9px] uppercase tracking-widest font-bold mb-1">Band 3 (Green)</div>
-                     <div className="text-slate-300 font-mono text-sm font-semibold">{data.recommendedWavelengthsNano.band3_Green} nm</div>
+                     <div className="text-slate-500 text-[9px] uppercase tracking-widest font-bold mb-1">Band 11 (SWIR)</div>
+                     <div className="text-slate-300 font-mono text-sm font-semibold">{data.recommendedWavelengthsNano.band11_Swir} nm</div>
                    </div>
                 </div>
              </div>
           </div>
 
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex gap-4 text-amber-800">
-            <Info className="w-6 h-6 shrink-0 mt-0.5 text-amber-600" />
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex gap-4 text-slate-700">
+            <Info className="w-6 h-6 shrink-0 mt-0.5 text-slate-500" />
             <div className="text-sm leading-relaxed">
-              <strong className="block mb-1">Estimate, not a measurement</strong>
+              <strong className="block mb-1">Source</strong>
               {data.apiCitation}
             </div>
           </div>

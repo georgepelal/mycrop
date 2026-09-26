@@ -87,16 +87,19 @@ export default function EnsembleDispersion({ onNavigate }: EnsembleDispersionPro
   // Transform raw dates and metrics with unit selectors
   const rawDates = data?.dates || [];
   
-  // Create intermediate complete records
-  const allParsedRecords = rawDates.map((date, index) => {
-    const tLow = data?.tempMaxLow?.[index] ?? 0;
-    const tHigh = data?.tempMaxHigh?.[index] ?? 0;
-    const tMean = data?.tempMaxMean?.[index] ?? 0;
-    const rMean = data?.rainMean?.[index] ?? 0;
-    const rHigh = data?.rainHigh?.[index] ?? 0;
-    const rProb = data?.rainProbability?.[index] ?? 0;
+  // Only days where every statistic is present; a missing value used to be
+  // drawn as 0 °C / 0 mm / 0% chance.
+  const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
+  const allParsedRecords = rawDates.flatMap((date, index) => {
+    const tLow = data?.tempMaxLow?.[index];
+    const tHigh = data?.tempMaxHigh?.[index];
+    const tMean = data?.tempMaxMean?.[index];
+    const rMean = data?.rainMean?.[index];
+    const rHigh = data?.rainHigh?.[index];
+    const rProb = data?.rainProbability?.[index];
+    if (!isNum(tLow) || !isNum(tHigh) || !isNum(tMean) || !isNum(rMean) || !isNum(rHigh) || !isNum(rProb)) return [];
 
-    return {
+    return [{
       index,
       rawDate: date,
       parsedDate: new Date(date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }),
@@ -106,7 +109,7 @@ export default function EnsembleDispersion({ onNavigate }: EnsembleDispersionPro
       rainMean: rMean,
       rainHigh: rHigh,
       rainProb: rProb
-    };
+    }];
   });
 
   // Apply Date period filter (index-based partition of the timeline)
@@ -232,7 +235,7 @@ export default function EnsembleDispersion({ onNavigate }: EnsembleDispersionPro
         <div className="h-96 flex flex-col items-center justify-center border border-gray-100 rounded-3xl bg-white shadow-sm">
           <Loader2 className="w-8 h-8 text-brand-green animate-spin mb-4" />
           <p className="text-sm font-medium text-gray-500">
-            {t("ensemble.computing", "Computing ensemble simulations...")}
+            {t("ensemble.computing", "Fetching ensemble members...")}
           </p>
         </div>
       ) : error ? (
@@ -482,7 +485,7 @@ export default function EnsembleDispersion({ onNavigate }: EnsembleDispersionPro
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
                 <div>
                   <h3 className="font-bold text-lg">{t("ensemble.tableTitle", "Tabular Model Output")}</h3>
-                  <p className="text-xs text-gray-400">{t("ensemble.tableSubtitle", "Decoupled 30-member atmospheric micro-forecasting series")}</p>
+                  <p className="text-xs text-gray-400">{t("ensemble.tableSubtitle", "Ensemble members summarised per day (mean, warmest, coolest)")}</p>
                 </div>
                 <div className="text-[11px] font-mono bg-slate-50 border border-gray-100 p-2 rounded-xl text-gray-500">
                   Lat: {data.latitude.toFixed(4)} | Lng: {data.longitude.toFixed(4)} | {t("ensemble.forecastModel", "Forecasting Base")}: {data.isLiveEnsemble ? "GEFS 30-MEMBER CONNECTED" : "SPATIAL DISPERSION MODEL"}

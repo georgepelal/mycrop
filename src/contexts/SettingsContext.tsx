@@ -113,7 +113,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return `${hectares.toLocaleString(undefined, { maximumFractionDigits: 1 })} Hectares`;
   };
 
-  const formatYield = (tHa: number) => {
+  const formatYield = (tHa: number | null) => {
+    if (tHa === null || !Number.isFinite(tHa)) return "—";
     if (!settings.metricScale) {
       const buAc = tHa * 14.87;
       return `${buAc.toLocaleString(undefined, { maximumFractionDigits: 1 })} Bu/Ac`;

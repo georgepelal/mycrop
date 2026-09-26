@@ -46,7 +46,10 @@ export default function ParcelForm({ onAddParcel, onNavigateBack }: ParcelFormPr
   const [cropType, setCropType] = useState(CROP_PRESETS[0]);
   const [soilType] = useState(SOIL_PRESETS[0]);
   const [area, setArea] = useState(0);
-  const [soilMoisture] = useState(38);
+  // Readings start empty. They used to be hard-coded (38% moisture, pH 6.4,
+  // NDVI 0.72, NDWI 0.42, nitrogen "Optimal") with no way to change them, so
+  // every new parcel was saved with the same made-up soil and crop data.
+  const soilMoisture: number | null = null;
   const [lat, setLat] = useState(40.5283);
   const [lng, setLng] = useState(22.1283);
 
@@ -67,10 +70,10 @@ export default function ParcelForm({ onAddParcel, onNavigateBack }: ParcelFormPr
   }, []);
 
   // Environmental states
-  const [soilPH] = useState(6.4);
-  const [nitrogen] = useState("Optimal");
-  const [ndviValue] = useState(0.72);
-  const [ndwiValue] = useState(0.42);
+  const soilPH: number | null = null;
+  const nitrogen = "";
+  const ndviValue: number | null = null;
+  const ndwiValue: number | null = null;
 
   // Simulated drawn vertices
   const [vertices, setVertices] = useState<Coordinate[]>([]);
@@ -236,9 +239,6 @@ export default function ParcelForm({ onAddParcel, onNavigateBack }: ParcelFormPr
        finalLng = vertices[0].lng;
     }
 
-    const finalNdvi = ndviValue || 0.65;
-    const cropHeight = Math.floor(40 + (finalNdvi * 60) + (Math.random() * 10));
-    const predictedYield = parseFloat((2.5 + (finalNdvi * 4.5)).toFixed(1));
 
     onAddParcel({
       name: name.trim(),
@@ -252,16 +252,16 @@ export default function ParcelForm({ onAddParcel, onNavigateBack }: ParcelFormPr
       latitude: finalLat,
       longitude: finalLng,
       boundaries: vertices,
-      ndvi: Math.min(0.99, Math.max(0.1, finalNdvi)),
-      ndviValue: Math.min(0.99, Math.max(0.1, finalNdvi)),
-      ndwiValue: ndwiValue,
-      cropHeight,
-      predictedYield,
+      ndvi: ndviValue,
+      ndviValue,
+      ndwiValue,
+      cropHeight: null,
+      predictedYield: null,
       soilPH,
       nitrogen,
-      plantingMonth: "May",
-      costPerHectare: cropType === "Soybeans" ? 950 : cropType === "Winter Wheat" ? 885 : 900,
-      marketPricePerTon: cropType === "Soybeans" ? 340 : cropType === "Winter Wheat" ? 190 : 220
+      plantingMonth: "",
+      costPerHectare: null,
+      marketPricePerTon: null
     });
   };
 

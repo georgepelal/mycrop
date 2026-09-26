@@ -170,21 +170,21 @@ export default function NasaAgronomicSoil({ parcels, activeParcelId, onNavigate 
                 { id: "Root Zone", height: 5, value: latest.rootMoisture },
                 { id: "Profile", height: 6, value: latest.profMoisture }
               ].map(layerInfo => {
-                const moisture = layerInfo.value ?? 0;
+                const moisture: number | null = layerInfo.value ?? null;
                 return {
                   id: layerInfo.id,
                   height: layerInfo.height,
                   leftLabel: <span className="text-white/80 font-black text-[9px] sm:text-[10px] lg:text-xs whitespace-nowrap drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">{layerInfo.id}</span>,
                   rightLabel: (
                     <div className="flex flex-col text-[10px] font-extrabold text-white leading-none drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] gap-0.5 whitespace-nowrap">
-                      <span className="text-blue-300">{(moisture * 100).toFixed(0)}% Moist</span>
+                      <span className="text-blue-300">{moisture !== null ? `${(moisture * 100).toFixed(0)}% Moist` : "—"}</span>
                     </div>
                   ),
                   renderBlock: (rowIndex, colIndex) => (
-                    <div key={`${layerInfo.id}-${rowIndex}-${colIndex}`} className={`w-[var(--block-size)] h-[var(--block-size)] border-[1px] md:border-[2px] ${getMoistureBlockColor(moisture)} shrink-0 group relative`}>
+                    <div key={`${layerInfo.id}-${rowIndex}-${colIndex}`} className={`w-[var(--block-size)] h-[var(--block-size)] border-[1px] md:border-[2px] ${moisture !== null ? getMoistureBlockColor(moisture) : "bg-slate-500/40 border-slate-400/40"} shrink-0 group relative`}>
                       {rowIndex === 0 && colIndex === 10 && (
                         <div className="absolute hidden group-hover:block bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded whitespace-nowrap z-20">
-                          {layerInfo.id}: {(moisture * 100).toFixed(0)}%
+                          {layerInfo.id}: {moisture !== null ? `${(moisture * 100).toFixed(0)}%` : "no data"}
                         </div>
                       )}
                     </div>

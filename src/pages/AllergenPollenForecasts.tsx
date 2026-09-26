@@ -154,7 +154,7 @@ export default function AllergenPollenForecasts({ onNavigate }: AllergenPollenPr
                 Birch Pollen
               </div>
               <div className="text-3xl font-black text-amber-600">
-                {data.allergens.birchPollen} <span className="text-sm font-medium text-slate-400">grains/m³</span>
+                {data.allergens.birchPollen ?? "—"} <span className="text-sm font-medium text-slate-400">grains/m³</span>
               </div>
               <div className="text-[10px] text-slate-500 mt-2 flex items-center gap-1">
                 <Activity className="w-3.5 h-3.5 text-amber-500" />
@@ -167,7 +167,7 @@ export default function AllergenPollenForecasts({ onNavigate }: AllergenPollenPr
                 Grass Pollen
               </div>
               <div className="text-3xl font-black text-emerald-600">
-                {data.allergens.grassPollen} <span className="text-sm font-medium text-slate-400">grains/m³</span>
+                {data.allergens.grassPollen ?? "—"} <span className="text-sm font-medium text-slate-400">grains/m³</span>
               </div>
               <div className="text-[10px] text-slate-500 mt-2 flex items-center gap-1">
                 <Activity className="w-3.5 h-3.5 text-emerald-500" />
@@ -180,7 +180,7 @@ export default function AllergenPollenForecasts({ onNavigate }: AllergenPollenPr
                 Ragweed Pollen
               </div>
               <div className="text-3xl font-black text-rose-600 truncate">
-                {data.allergens.ragweedPollen} <span className="text-sm font-medium text-slate-400">grains/m³</span>
+                {data.allergens.ragweedPollen ?? "—"} <span className="text-sm font-medium text-slate-400">grains/m³</span>
               </div>
               <div className="text-[10px] text-slate-500 mt-2 flex items-center gap-1">
                 <Activity className="w-3.5 h-3.5 text-rose-500" />

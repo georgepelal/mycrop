@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, Navigate, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useAuth } from "./contexts/useAuth";
@@ -9,79 +9,12 @@ import { useTranslation } from "react-i18next";
 
 // Pages
 import Dashboard from "./pages/Dashboard";
-import EnsembleDispersion from "./pages/EnsembleDispersion";
-import DecadalReanalysis from "./pages/DecadalReanalysis";
-import ClimateProjections from "./pages/ClimateProjections";
-import EnvironmentalTelemetry from "./pages/EnvironmentalTelemetry";
-import DiagnosticAnalytics from "./pages/DiagnosticAnalytics";
-import CropAutoDetection from "./pages/CropAutoDetection";
-import Chat from "./pages/Chat";
-import Parcels from "./pages/Parcels";
-import ParcelForm from "./pages/ParcelForm";
-import SettingsPage from "./pages/SettingsPage";
-import AccountSettingsPage from "./pages/AccountSettingsPage";
-import Field3DView from "./pages/Field3DView";
 import AuthPage from "./pages/AuthPage";
 import CompanyLogo from "./components/CompanyLogo";
 import LanguageSwitcher from "./components/LanguageSwitcher";
 import ThemeToggle from "./components/ThemeToggle";
-import FrostFreezeRisk from "./pages/FrostFreezeRisk";
-import GrowingDegreeDays from "./pages/GrowingDegreeDays";
-import UvAndBoundaryLayer from "./pages/UvAndBoundaryLayer";
-import AllergenPollenForecasts from "./pages/AllergenPollenForecasts";
-import GlobalGreenhouseGas from "./pages/GlobalGreenhouseGas";
-import PestDiseaseRisk from "./pages/PestDiseaseRisk";
-import CropLodgingShear from "./pages/CropLodgingShear";
-import StomatalConductance from "./pages/StomatalConductance";
-import ParPpfdData from "./pages/ParPpfdData";
-import PollinatorOutlooks from "./pages/PollinatorOutlooks";
-import SoilCompositionTexture from "./pages/SoilCompositionTexture";
-import SoilOrganicCarbon from "./pages/SoilOrganicCarbon";
-import NasaAgronomicSoil from "./pages/NasaAgronomicSoil";
-import CropDictionary from "./pages/CropDictionary";
-import OpenEpiSoilQuality from "./pages/OpenEpiSoilQuality";
-import AgronomicEvapotranspiration from "./pages/AgronomicEvapotranspiration";
-import SoilTrafficability from "./pages/SoilTrafficability";
-import DeepSoilTemperature from "./pages/DeepSoilTemperature";
 
-import SoilSalinityCapillary from "./pages/SoilSalinityCapillary";
-import AgronomicNutrientLeaching from "./pages/AgronomicNutrientLeaching";
-import FloodHydrology from "./pages/FloodHydrology";
-import USGSWaterWatch from "./pages/USGSWaterWatch";
-import CroplandFireRisk from "./pages/CroplandFireRisk";
 
-import LocalBiodiversity from "./pages/LocalBiodiversity";
-import NasaEonetEvents from "./pages/NasaEonetEvents";
-import GdacsActiveHazards from "./pages/GdacsActiveHazards";
-import USGSSeismicMaps from "./pages/USGSSeismicMaps";
-import CopernicusReflectance from "./pages/CopernicusReflectance";
-import OSMNaturalFeatures from "./pages/OSMNaturalFeatures";
-import USDACropPricing from "./pages/USDACropPricing";
-import OpenExchangeRates from "./pages/OpenExchangeRates";
-import WorldBankForests from "./pages/WorldBankForests";
-import RegionalIndicators from "./pages/RegionalIndicators";
-import SolarEnergyPotential from "./pages/SolarEnergyPotential";
-import AgronomicChillingHours from "./pages/AgronomicChillingHours";
-import CropWaterEfficiency from "./pages/CropWaterEfficiency";
-import NoaaSpaceWeather from "./pages/NoaaSpaceWeather";
-import IssSatelliteOverhead from "./pages/IssSatelliteOverhead";
-import CropLiteratureLibrary from "./pages/CropLiteratureLibrary";
-import MarineHydrodynamics from "./pages/MarineHydrodynamics";
-import AirQualityAerosols from "./pages/AirQualityAerosols";
-import OpenEpiForestFire from "./pages/OpenEpiForestFire";
-import ClimatologyNasa from "./pages/ClimatologyNasa";
-import RiverDischarge from "./pages/RiverDischarge";
-import AgriSoilMoisture from "./pages/AgriSoilMoisture";
-import HistoricalArchive from "./pages/HistoricalArchive";
-import SunriseSunsetAstronomy from "./pages/SunriseSunsetAstronomy";
-import PlantDictionaryLookup from "./pages/PlantDictionaryLookup";
-import GbifLocalOccurrences from "./pages/GbifLocalOccurrences";
-import OsmReverseGeocode from "./pages/OsmReverseGeocode";
-import ClientIpGeolocation from "./pages/ClientIpGeolocation";
-import LocalPublicHolidays from "./pages/LocalPublicHolidays";
-import RegionalCountrySovereign from "./pages/RegionalCountrySovereign";
-import GbifSpeciesSuggest from "./pages/GbifSpeciesSuggest";
-import FieldWeatherPage from "./pages/FieldWeatherPage";
 
 // Icons
 import {
@@ -100,6 +33,76 @@ import {
   Activity,
   Bot,
 } from "lucide-react";
+
+// Pages load on demand: 70+ pages were in one bundle.
+const EnsembleDispersion = lazy(() => import("./pages/EnsembleDispersion"));
+const DecadalReanalysis = lazy(() => import("./pages/DecadalReanalysis"));
+const ClimateProjections = lazy(() => import("./pages/ClimateProjections"));
+const EnvironmentalTelemetry = lazy(() => import("./pages/EnvironmentalTelemetry"));
+const DiagnosticAnalytics = lazy(() => import("./pages/DiagnosticAnalytics"));
+const CropAutoDetection = lazy(() => import("./pages/CropAutoDetection"));
+const Chat = lazy(() => import("./pages/Chat"));
+const Parcels = lazy(() => import("./pages/Parcels"));
+const ParcelForm = lazy(() => import("./pages/ParcelForm"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const AccountSettingsPage = lazy(() => import("./pages/AccountSettingsPage"));
+const Field3DView = lazy(() => import("./pages/Field3DView"));
+const FrostFreezeRisk = lazy(() => import("./pages/FrostFreezeRisk"));
+const GrowingDegreeDays = lazy(() => import("./pages/GrowingDegreeDays"));
+const UvAndBoundaryLayer = lazy(() => import("./pages/UvAndBoundaryLayer"));
+const AllergenPollenForecasts = lazy(() => import("./pages/AllergenPollenForecasts"));
+const GlobalGreenhouseGas = lazy(() => import("./pages/GlobalGreenhouseGas"));
+const PestDiseaseRisk = lazy(() => import("./pages/PestDiseaseRisk"));
+const CropLodgingShear = lazy(() => import("./pages/CropLodgingShear"));
+const StomatalConductance = lazy(() => import("./pages/StomatalConductance"));
+const ParPpfdData = lazy(() => import("./pages/ParPpfdData"));
+const PollinatorOutlooks = lazy(() => import("./pages/PollinatorOutlooks"));
+const SoilCompositionTexture = lazy(() => import("./pages/SoilCompositionTexture"));
+const SoilOrganicCarbon = lazy(() => import("./pages/SoilOrganicCarbon"));
+const NasaAgronomicSoil = lazy(() => import("./pages/NasaAgronomicSoil"));
+const CropDictionary = lazy(() => import("./pages/CropDictionary"));
+const OpenEpiSoilQuality = lazy(() => import("./pages/OpenEpiSoilQuality"));
+const AgronomicEvapotranspiration = lazy(() => import("./pages/AgronomicEvapotranspiration"));
+const SoilTrafficability = lazy(() => import("./pages/SoilTrafficability"));
+const DeepSoilTemperature = lazy(() => import("./pages/DeepSoilTemperature"));
+const SoilSalinityCapillary = lazy(() => import("./pages/SoilSalinityCapillary"));
+const AgronomicNutrientLeaching = lazy(() => import("./pages/AgronomicNutrientLeaching"));
+const FloodHydrology = lazy(() => import("./pages/FloodHydrology"));
+const USGSWaterWatch = lazy(() => import("./pages/USGSWaterWatch"));
+const CroplandFireRisk = lazy(() => import("./pages/CroplandFireRisk"));
+const LocalBiodiversity = lazy(() => import("./pages/LocalBiodiversity"));
+const NasaEonetEvents = lazy(() => import("./pages/NasaEonetEvents"));
+const GdacsActiveHazards = lazy(() => import("./pages/GdacsActiveHazards"));
+const USGSSeismicMaps = lazy(() => import("./pages/USGSSeismicMaps"));
+const CopernicusReflectance = lazy(() => import("./pages/CopernicusReflectance"));
+const OSMNaturalFeatures = lazy(() => import("./pages/OSMNaturalFeatures"));
+const USDACropPricing = lazy(() => import("./pages/USDACropPricing"));
+const OpenExchangeRates = lazy(() => import("./pages/OpenExchangeRates"));
+const WorldBankForests = lazy(() => import("./pages/WorldBankForests"));
+const RegionalIndicators = lazy(() => import("./pages/RegionalIndicators"));
+const SolarEnergyPotential = lazy(() => import("./pages/SolarEnergyPotential"));
+const AgronomicChillingHours = lazy(() => import("./pages/AgronomicChillingHours"));
+const CropWaterEfficiency = lazy(() => import("./pages/CropWaterEfficiency"));
+const NoaaSpaceWeather = lazy(() => import("./pages/NoaaSpaceWeather"));
+const IssSatelliteOverhead = lazy(() => import("./pages/IssSatelliteOverhead"));
+const CropLiteratureLibrary = lazy(() => import("./pages/CropLiteratureLibrary"));
+const MarineHydrodynamics = lazy(() => import("./pages/MarineHydrodynamics"));
+const AirQualityAerosols = lazy(() => import("./pages/AirQualityAerosols"));
+const OpenEpiForestFire = lazy(() => import("./pages/OpenEpiForestFire"));
+const ClimatologyNasa = lazy(() => import("./pages/ClimatologyNasa"));
+const RiverDischarge = lazy(() => import("./pages/RiverDischarge"));
+const AgriSoilMoisture = lazy(() => import("./pages/AgriSoilMoisture"));
+const HistoricalArchive = lazy(() => import("./pages/HistoricalArchive"));
+const SunriseSunsetAstronomy = lazy(() => import("./pages/SunriseSunsetAstronomy"));
+const PlantDictionaryLookup = lazy(() => import("./pages/PlantDictionaryLookup"));
+const GbifLocalOccurrences = lazy(() => import("./pages/GbifLocalOccurrences"));
+const OsmReverseGeocode = lazy(() => import("./pages/OsmReverseGeocode"));
+const ClientIpGeolocation = lazy(() => import("./pages/ClientIpGeolocation"));
+const LocalPublicHolidays = lazy(() => import("./pages/LocalPublicHolidays"));
+const RegionalCountrySovereign = lazy(() => import("./pages/RegionalCountrySovereign"));
+const GbifSpeciesSuggest = lazy(() => import("./pages/GbifSpeciesSuggest"));
+const FieldWeatherPage = lazy(() => import("./pages/FieldWeatherPage"));
+
 
 const INITIAL_PARCELS: Parcel[] = [
   {
@@ -291,7 +294,7 @@ const NAV_SECTIONS: NavGroup[] = [
             theme: "purple",
             items: [
               { id: "field-agronomic-et0", label: "Agronomic Evapotranspiration" },
-              { id: "field-wue", label: "Crop Water Efficiency" },
+              { id: "field-wue", label: "Crop Water Demand" },
               { id: "field-soil-trafficability", label: "Soil Trafficability" },
               { id: "field-soil-salinity", label: "Soil Salinity" },
               { id: "field-deep-soil-temp", label: "Deep Soil Temperature" },
@@ -555,13 +558,13 @@ function DashboardShell() {
       location:
         newParcel.location ||
         `${newParcel.lat?.toFixed(4)}, ${newParcel.lng?.toFixed(4)}`,
-      ndviValue: Number(newParcel.ndviValue ?? newParcel.ndvi),
-      ndwiValue: Number(newParcel.ndwiValue ?? 0.45),
-      soilPH: Number(newParcel.soilPH ?? 6.5),
-      nitrogen: newParcel.nitrogen ?? "Optimal",
-      plantingMonth: newParcel.plantingMonth ?? "May",
-      costPerHectare: Number(newParcel.costPerHectare ?? 900),
-      marketPricePerTon: Number(newParcel.marketPricePerTon ?? 210),
+      ndviValue: newParcel.ndviValue ?? newParcel.ndvi ?? null,
+      ndwiValue: newParcel.ndwiValue ?? null,
+      soilPH: newParcel.soilPH ?? null,
+      nitrogen: newParcel.nitrogen ?? "",
+      plantingMonth: newParcel.plantingMonth ?? "",
+      costPerHectare: newParcel.costPerHectare ?? null,
+      marketPricePerTon: newParcel.marketPricePerTon ?? null,
       customImage: newParcel.customImage ?? null,
     };
 
@@ -742,6 +745,7 @@ function DashboardShell() {
         id="mycrop-main-viewport"
       >
         <div className="max-w-7xl mx-auto space-y-6">
+          <Suspense fallback={<div className="p-10 text-center text-sm text-gray-400">Loading…</div>}>
           <Routes>
             <Route path="/" element={<Navigate to="/parcels" replace />} />
             <Route
@@ -907,6 +911,7 @@ function DashboardShell() {
             <Route path="/account" element={<AccountSettingsPage />} />
             <Route path="*" element={<Navigate to="/parcels" replace />} />
           </Routes>
+          </Suspense>
         </div>
       </main>
     </div>

@@ -17,7 +17,6 @@ interface FrostFreezeData {
   tempMin: number[];
   dewPoint: number[];
   frostProbability: number[];
-  soilFreezeDepthCm: number[];
   protectiveAction: string;
   nextFrostDate: string;
   isLiveFrost: boolean;
@@ -69,8 +68,7 @@ export default function FrostFreezeRisk({ onNavigate }: FrostFreezeRiskProps) {
     date,
     tempMin: convertTemp(data.tempMin[index]),
     dewPoint: convertTemp(data.dewPoint[index]),
-    frostProbability: data.frostProbability[index],
-    freezeDepth: data.soilFreezeDepthCm[index]
+    frostProbability: data.frostProbability[index]
   })) || [];
 
   const handleCopyJSON = () => {
@@ -96,7 +94,7 @@ export default function FrostFreezeRisk({ onNavigate }: FrostFreezeRiskProps) {
               Frost/Freeze Risk
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              Analyze localized frost probability, dew points, and soil freeze depth over 7 days.
+              Frost risk tiers from the forecast minimum temperature and dew point, 7 days ahead.
             </p>
           </div>
         </div>
@@ -198,19 +196,17 @@ export default function FrostFreezeRisk({ onNavigate }: FrostFreezeRiskProps) {
 
             <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm">
               <h3 className="font-bold text-lg mb-6 flex items-center gap-2">
-                <AlertTriangle className="text-amber-500 w-5 h-5" /> Frost Probability & Freeze Depth
+                <AlertTriangle className="text-amber-500 w-5 h-5" /> Frost Risk Tier
               </h3>
               <div className="h-72 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: -20 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                    <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} unit="%" />
-                    <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} unit="cm" />
+                    <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
                     <RechartsTooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                     <Legend />
-                    <Bar yAxisId="left" dataKey="frostProbability" fill="#94a3b8" radius={[4, 4, 0, 0]} name="Frost Likelihood (%)" />
-                    <Line yAxisId="right" type="monotone" dataKey="freezeDepth" stroke="#0284c7" strokeWidth={3} name="Soil Freeze Depth (cm)" dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                    <Bar yAxisId="left" dataKey="frostProbability" fill="#94a3b8" radius={[4, 4, 0, 0]} name="Frost risk tier (rule of thumb)" />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>

@@ -448,7 +448,7 @@ export default function EnvironmentalTelemetry({ onNavigate }: EnvironmentalTele
                 <div className="divide-y divide-slate-100">
                   <div className={`py-2 flex justify-between text-sm ${visibleGasses.pm25 ? "" : "opacity-30"}`}>
                     <span className="font-medium text-slate-500">{t("env.tablePm25", "PM2.5 (Fine dust)")}</span>
-                    <span className="font-bold text-slate-800 font-mono">{data.airQuality.pm2_5} µg/m³</span>
+                    <span className="font-bold text-slate-800 font-mono">{data.airQuality.pm2_5 ?? "—"} µg/m³</span>
                   </div>
                   <div className={`py-2 flex justify-between text-sm ${visibleGasses.pm10 ? "" : "opacity-30"}`}>
                     <span className="font-medium text-slate-500">{t("env.tablePm10", "PM10 (Coarse dust)")}</span>

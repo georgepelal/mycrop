@@ -203,7 +203,7 @@ export default function Field3DView({ parcels = [], initialSelectedParcelId }: F
   const socialTemplates = [
     {
       title: "🔬 Sensor Science",
-      text: `🔬 Fully captured agricultural metrics for "${customTitle || selectedParcel.name}"! Active canopy density is health-optimized with average NDVI status of ${selectedParcel.ndvi.toFixed(2)} and estimated yield at ${selectedParcel.predictedYield.toFixed(1)} t/h. Precision telemetry is in full effect!`
+      text: `🔬 Fully captured agricultural metrics for "${customTitle || selectedParcel.name}"! NDVI ${selectedParcel.ndvi !== null ? selectedParcel.ndvi.toFixed(2) : "not recorded"}, yield estimate ${selectedParcel.predictedYield !== null ? `${selectedParcel.predictedYield !== null ? `${selectedParcel.predictedYield.toFixed(1)} t/ha` : "—"}a` : "not recorded"}.`
     },
     {
       title: "🛰️ Satellite Analysis",
@@ -533,29 +533,24 @@ export default function Field3DView({ parcels = [], initialSelectedParcelId }: F
               drawBoundaryPath();
               ctx.clip();
 
-              const seedValue = Math.abs(Math.sin(selectedParcel.lat || 40) * Math.cos(selectedParcel.lng || -80) * 123) || 45;
-              const userN = selectedParcel.soilGridsNitrogenValue || 110;
-
-              const zones = [
-                { x: 250 + (seedValue * 31) % 400, y: 200 + (seedValue * 21) % 400, r: 240 + (userN % 20) * 8, color: "rgba(16, 185, 129, 0.65)", label: "Nitrogen (N)" }
-              ];
-
-              zones.forEach((z) => {
-                const radial = ctx.createRadialGradient(z.x, z.y, 15, z.x, z.y, z.r);
-                radial.addColorStop(0, z.color);
-                radial.addColorStop(0.45, z.color.replace("0.65", "0.28").replace("0.55", "0.22").replace("0.6", "0.25"));
-                radial.addColorStop(1, "rgba(0,0,0,0)");
-                
-                ctx.beginPath();
-                ctx.arc(z.x, z.y, z.r, 0, Math.PI * 2);
-                ctx.fillStyle = radial;
+              // SoilGrids gives one value per ~250 m cell, so the whole field
+              // gets one uniform tint — there is no within-field pattern to
+              // draw. (This used to place a "hotspot" at a position derived
+              // from sin(lat)·cos(lng), and assumed 110 cg/kg when unqueried.)
+              const userN = selectedParcel.soilGridsNitrogenValue;
+              if (userN != null) {
+                const alpha = Math.min(0.6, 0.15 + userN / 500);
+                ctx.fillStyle = `rgba(16, 185, 129, ${alpha.toFixed(2)})`;
+                drawBoundaryPath();
                 ctx.fill();
-
-                // Small center indicators with text labels
-                ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+                ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
                 ctx.font = "bold 14px 'JetBrains Mono', monospace";
-                ctx.fillText(z.label, z.x - 55, z.y + 4);
-              });
+                ctx.fillText(`Soil N ${userN} cg/kg (SoilGrids)`, 40, 60);
+              } else {
+                ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+                ctx.font = "bold 14px 'JetBrains Mono', monospace";
+                ctx.fillText("No soil nitrogen data for this field", 40, 60);
+              }
 
               ctx.restore();
 
@@ -1020,13 +1015,13 @@ export default function Field3DView({ parcels = [], initialSelectedParcelId }: F
           </div>
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px] font-mono">
             <span className="text-slate-400 font-medium">NDVI Status:</span>
-            <span className={`font-bold justify-self-end ${selectedParcel.ndvi > 0.7 ? "text-emerald-400" : selectedParcel.ndvi > 0.5 ? "text-amber-400" : "text-rose-400"}`}>
-              {selectedParcel.ndvi.toFixed(2)}
+            <span className={`font-bold justify-self-end ${selectedParcel.ndvi === null ? "text-slate-400" : selectedParcel.ndvi > 0.7 ? "text-emerald-400" : selectedParcel.ndvi > 0.5 ? "text-amber-400" : "text-rose-400"}`}>
+              {selectedParcel.ndvi !== null ? selectedParcel.ndvi.toFixed(2) : "—"}
             </span>
             <span className="text-slate-400 font-medium">Crop Height:</span>
             <span className="text-indigo-300 font-bold justify-self-end">{selectedParcel.cropHeight}cm</span>
             <span className="text-slate-400 font-medium">Est. Yield:</span>
-            <span className="text-emerald-400 font-bold justify-self-end">{selectedParcel.predictedYield.toFixed(1)} t/h</span>
+            <span className="text-emerald-400 font-bold justify-self-end">{selectedParcel.predictedYield !== null ? `${selectedParcel.predictedYield.toFixed(1)} t/ha` : "—"}</span>
             <span className="text-slate-400 font-medium">Moisture:</span>
             <span className="text-blue-400 font-bold justify-self-end">{selectedParcel.soilMoisture}%</span>
           </div>
@@ -1119,7 +1114,7 @@ export default function Field3DView({ parcels = [], initialSelectedParcelId }: F
             <div className="bg-emerald-50/50 border border-emerald-100 p-3.5 rounded-2xl text-left space-y-1">
               <span className="text-[10px] text-emerald-800 font-bold font-mono tracking-wider uppercase block leading-none">Crop Density</span>
               <span className="text-lg font-display font-black text-emerald-950 leading-none">
-                {selectedParcel.ndvi > 0.7 ? "Excellent" : selectedParcel.ndvi > 0.5 ? "Moderate" : "Scarce"}
+                {selectedParcel.ndvi === null ? "No reading" : selectedParcel.ndvi > 0.7 ? "Excellent" : selectedParcel.ndvi > 0.5 ? "Moderate" : "Scarce"}
               </span>
               <span className="text-[9px] text-emerald-700/80 font-medium block leading-none pt-1">
                 Satellite Feed Live
@@ -1404,7 +1399,7 @@ export default function Field3DView({ parcels = [], initialSelectedParcelId }: F
         </div>
 
         {/* Warning card for extreme environmental thresholds */}
-        {selectedParcel.soilMoisture < 30 && (
+        {selectedParcel.soilMoisture !== null && selectedParcel.soilMoisture < 30 && (
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div className="space-y-0.5 text-left">
@@ -1582,7 +1577,7 @@ export default function Field3DView({ parcels = [], initialSelectedParcelId }: F
                         <div className="text-[10px] text-left">
                           <span className={`${cardThemes.lbl} block text-[7.5px] leading-none`}>NDVI INDEX</span>
                           <span className={`${cardThemes.val} block pt-0.5`}>
-                            {selectedParcel.ndvi.toFixed(2)} [HIGH]
+                            {selectedParcel.ndvi !== null ? selectedParcel.ndvi.toFixed(2) : "—"}
                           </span>
                         </div>
                       )}
@@ -1590,7 +1585,7 @@ export default function Field3DView({ parcels = [], initialSelectedParcelId }: F
                         <div className="text-[10px] text-left">
                           <span className={`${cardThemes.lbl} block text-[7.5px] leading-none`}>EST. YIELD</span>
                           <span className={`${cardThemes.valSec} block pt-0.5`}>
-                            {selectedParcel.predictedYield.toFixed(1)} t/h
+                            {selectedParcel.predictedYield !== null ? `${selectedParcel.predictedYield.toFixed(1)} t/ha` : "—"}
                           </span>
                         </div>
                       )}

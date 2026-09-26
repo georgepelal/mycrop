@@ -4795,8 +4795,10 @@ app.post("/api/copernicus-sentinel-reflectance", async (req, res) => {
           timeRange: { from: from.toISOString(), to: to.toISOString() },
           aggregationInterval: { of: "P1D" },
           evalscript: REFLECTANCE_EVALSCRIPT,
-          resx: 10,
-          resy: 10,
+          // resx/resy are in the bounds' CRS units — degrees for EPSG:4326 —
+          // so 10 m is converted at this latitude (a bare 10 = 10° pixels).
+          resx: 10 / (111320 * Math.max(0.01, Math.cos((latitude * Math.PI) / 180))),
+          resy: 10 / 111320,
         },
         calculations: { default: {} },
       }),

@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import React from "react";
 import { 
   Sprout, 
@@ -14,14 +15,12 @@ import { Parcel, CROP_PRESETS } from "../types";
 interface DashboardProps {
   parcels: Parcel[];
   activeParcelId: string;
-  onNavigate: (page: string) => void;
 }
 
 export default function Dashboard({ 
   parcels, 
-  activeParcelId, 
-  onNavigate 
-}: DashboardProps) {
+  activeParcelId, }: DashboardProps) {
+  const navigate = useNavigate();
   const { formatArea, formatYield } = useSettings();
   const activeParcel = parcels.find(p => p.id === activeParcelId) || parcels[0];
 
@@ -60,7 +59,7 @@ export default function Dashboard({
         
         {/* Weather Card */}
         <button 
-          onClick={() => onNavigate("field-weather")}
+          onClick={() => navigate("/tools/field-forecast")}
           className="bg-white border border-gray-200 hover:border-sky-300 rounded-3xl p-6 text-left group transition-all shadow-sm hover:shadow-md relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-sky-50 rounded-full blur-3xl -z-10 group-hover:bg-sky-100 transition-colors"></div>
@@ -88,7 +87,7 @@ export default function Dashboard({
 
         {/* Soil Card */}
         <button 
-          onClick={() => onNavigate("field-soil")}
+          onClick={() => navigate("/field-soil")}
           className="bg-white border border-gray-200 hover:border-amber-300 rounded-3xl p-6 text-left group transition-all shadow-sm hover:shadow-md relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-full blur-3xl -z-10 group-hover:bg-amber-100 transition-colors"></div>
@@ -134,7 +133,7 @@ export default function Dashboard({
 
         {/* 3D Map Card */}
         <button 
-          onClick={() => onNavigate("field-3d")}
+          onClick={() => navigate("/field-3d")}
           className="bg-white border border-gray-200 hover:border-indigo-300 rounded-3xl p-6 text-left group transition-all shadow-sm hover:shadow-md relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl -z-10 group-hover:bg-indigo-100 transition-colors"></div>

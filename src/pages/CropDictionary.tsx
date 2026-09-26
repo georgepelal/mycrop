@@ -1,9 +1,7 @@
+import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
 import { ArrowLeft, Loader2, BookOpen, Sprout, Search, Droplets, ThermometerSun, CalendarClock } from "lucide-react";
 
-interface CropDictionaryProps {
-  onNavigate: (page: string) => void;
-}
 
 interface CropEntry {
   id: string;
@@ -21,7 +19,8 @@ interface CropCatalogData {
   crops: CropEntry[];
 }
 
-export default function CropDictionary({ onNavigate }: CropDictionaryProps) {
+export default function CropDictionary() {
+  const navigate = useNavigate();
   const [data, setData] = useState<CropCatalogData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,9 +47,9 @@ export default function CropDictionary({ onNavigate }: CropDictionaryProps) {
     fetchData();
   }, []);
 
-  const categories = ["All", ...Array.from(new Set(data?.crops.map(c => c.category) || []))].sort();
+  const categories = ["All", ...Array.from(new Set(data?.crops?.map(c => c.category) || []))].sort();
 
-  const filteredCrops = data?.crops.filter(crop => {
+  const filteredCrops = data?.crops?.filter(crop => {
     const matchesSearch = crop.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           crop.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === "All" || crop.category === selectedCategory;
@@ -62,7 +61,7 @@ export default function CropDictionary({ onNavigate }: CropDictionaryProps) {
       <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => onNavigate("field-overview")}
+            onClick={() => navigate("/tools")}
             className="p-2 hover:bg-slate-100 rounded-full transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />

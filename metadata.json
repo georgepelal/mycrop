@@ -1,6 +1,4 @@
 {
   "name": "MyCrop",
-  "description": "Agronomist Telemetry & Field Drawing Platform with 3D GPS Visualization",
-  "requestFramePermissions": ["geolocation"],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "description": "Agronomy and environmental data tools: pick a location and each tool fetches live data for it from a public scientific source."
 }

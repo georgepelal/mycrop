@@ -1,3 +1,6 @@
+import { useNavigate } from "react-router-dom";
+import { ToolProps } from "../tools/registry";
+import { useFetchOnLocation } from "../tools/useFetchOnLocation";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSettings } from "../contexts/useSettings";
@@ -7,9 +10,6 @@ import { Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Responsi
 } from "recharts";
 import LocationSearch from "../components/LocationSearch";
 
-interface EnsembleDispersionProps {
-  onNavigate: (page: string) => void;
-}
 
 interface EnsembleData {
   latitude: number;
@@ -24,7 +24,8 @@ interface EnsembleData {
   rainProbability: number[];
 }
 
-export default function EnsembleDispersion({ onNavigate }: EnsembleDispersionProps) {
+export default function EnsembleDispersion({ location, setLocation }: ToolProps) {
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const [data, setData] = useState<EnsembleData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -191,13 +192,17 @@ export default function EnsembleDispersion({ onNavigate }: EnsembleDispersionPro
     }
   };
 
+  // Fetches whenever the shared location changes, so a link that carries a
+  // location reproduces the data rather than an empty tool.
+  useFetchOnLocation(location, fetchData);
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between lg:pr-8">
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => onNavigate("field-overview")}
+            onClick={() => navigate("/tools")}
             className="p-2 hover:bg-slate-100 rounded-full transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -213,7 +218,8 @@ export default function EnsembleDispersion({ onNavigate }: EnsembleDispersionPro
         </div>
         <div className="md:w-96 w-full">
           <LocationSearch 
-            onLocationSelect={fetchData} 
+            onLocationSelect={(lat, lng, name) => setLocation({ lat, lng, label: name })}
+            initialLocationName={location?.label ?? ""} 
             placeholder={t("ensemble.searchPlaceholder", "Search anywhere on earth...")} 
           />
         </div>

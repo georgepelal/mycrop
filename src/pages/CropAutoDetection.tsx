@@ -1,10 +1,10 @@
+import { useNavigate } from "react-router-dom";
+import { ToolProps } from "../tools/registry";
+import { useFetchOnLocation } from "../tools/useFetchOnLocation";
 import React, { useState } from "react";
 import { ArrowLeft, Loader2, Scan, CheckCircle2, Info, Sprout } from "lucide-react";
 import LocationSearch from "../components/LocationSearch";
 
-interface CropAutoDetectionProps {
-  onNavigate: (page: string) => void;
-}
 
 interface CropDetectionData {
   detectedCrop: string | null;
@@ -14,7 +14,8 @@ interface CropDetectionData {
   explanation: string;
 }
 
-export default function CropAutoDetection({ onNavigate }: CropAutoDetectionProps) {
+export default function CropAutoDetection({ location, setLocation }: ToolProps) {
+  const navigate = useNavigate();
   const [data, setData] = useState<CropDetectionData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,12 +58,16 @@ export default function CropAutoDetection({ onNavigate }: CropAutoDetectionProps
     }
   };
 
+  // Fetches whenever the shared location changes, so a link that carries a
+  // location reproduces the data rather than an empty tool.
+  useFetchOnLocation(location, handleLocationSelect);
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between lg:pr-8">
         <div className="flex items-center gap-4 border-b border-transparent pb-2">
           <button 
-            onClick={() => onNavigate("field-overview")}
+            onClick={() => navigate("/tools")}
             className="p-2 hover:bg-slate-100 rounded-full transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -80,7 +85,8 @@ export default function CropAutoDetection({ onNavigate }: CropAutoDetectionProps
         
         <div className="w-full md:w-96">
           <LocationSearch 
-            onLocationSelect={handleLocationSelect} 
+            onLocationSelect={(lat, lng, name) => setLocation({ lat, lng, label: name })}
+            initialLocationName={location?.label ?? ""} 
             placeholder="Search anywhere..." 
           />
         </div>

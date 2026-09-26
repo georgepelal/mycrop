@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import React, { useState } from "react";
 import { ArrowLeft, Loader2, BookOpen, Search, User, Calendar, ExternalLink, Library, Bookmark } from "lucide-react";
 
@@ -11,11 +12,9 @@ interface Book {
   openLibraryUrl?: string;
 }
 
-interface CropLiteratureLibraryProps {
-  onNavigate: (page: string) => void;
-}
 
-export default function CropLiteratureLibrary({ onNavigate }: CropLiteratureLibraryProps) {
+export default function CropLiteratureLibrary() {
+  const navigate = useNavigate();
   const [cropName, setCropName] = useState("");
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(false);
@@ -55,7 +54,7 @@ export default function CropLiteratureLibrary({ onNavigate }: CropLiteratureLibr
       <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between lg:pr-8 border-b border-gray-150 pb-5">
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => onNavigate("field-overview")}
+            onClick={() => navigate("/tools")}
             className="p-2 hover:bg-slate-100 rounded-full transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />

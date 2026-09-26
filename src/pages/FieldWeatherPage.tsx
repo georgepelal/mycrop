@@ -1,3 +1,5 @@
+import { ToolProps } from "../tools/registry";
+import NeedsLocation from "../tools/NeedsLocation";
 import React, { useState, useEffect } from "react";
 import { 
   CloudSun, 
@@ -19,32 +21,35 @@ import {
   Compass,
   Clock
 } from "lucide-react";
-import { Parcel } from "../types";
 import CustomFieldVisualMap from "../components/CustomFieldVisualMap";
 
-interface FieldWeatherPageProps {
-  parcels: Parcel[];
-  activeParcelId: string | null;
-  onSelectParcel: (id: string) => void;
-}
-
-export default function FieldWeatherPage({ parcels, activeParcelId, onSelectParcel }: FieldWeatherPageProps) {
+export default function FieldWeatherPage({ parcels, activeParcelId, onSelectParcel, location }: ToolProps) {
   const [weatherData, setWeatherData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0);
 
   // Find active parcel
-  const activeParcel = parcels.find(p => p.id === activeParcelId) || parcels[0] || null;
+  const activeParcel = parcels?.find(p => p.id === activeParcelId) || parcels?.[0] || null;
 
   useEffect(() => {
     if (activeParcel && !activeParcelId) {
-      onSelectParcel(activeParcel.id);
+      onSelectParcel?.(activeParcel.id);
     }
   }, [activeParcel, activeParcelId, onSelectParcel]);
 
+  // The selected field's coordinates, or the shared location.
+  const at = activeParcel
+    ? { lat: activeParcel.latitude || activeParcel.lat, lng: activeParcel.longitude || activeParcel.lng }
+    : location;
+
+  const atLat = at?.lat;
+  const atLng = at?.lng;
+
   useEffect(() => {
-    if (!activeParcel) return;
+    if (atLat === undefined || atLng === undefined) return;
+    const lat = atLat;
+    const lng = atLng;
 
     async function fetchWeather() {
       setLoading(true);
@@ -53,10 +58,7 @@ export default function FieldWeatherPage({ parcels, activeParcelId, onSelectParc
         const response = await fetch("/api/weather-forecast", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            lat: activeParcel.latitude || activeParcel.lat, 
-            lng: activeParcel.longitude || activeParcel.lng 
-          }),
+          body: JSON.stringify({ lat, lng }),
         });
 
         if (!response.ok) {
@@ -75,7 +77,7 @@ export default function FieldWeatherPage({ parcels, activeParcelId, onSelectParc
     }
 
     fetchWeather();
-  }, [activeParcel]);
+  }, [atLat, atLng]);
 
   // Helper to resolve WMO Weather Code
   const getWeatherMeta = (code: number) => {
@@ -90,6 +92,8 @@ export default function FieldWeatherPage({ parcels, activeParcelId, onSelectParc
   };
 
   const currentMeta = weatherData?.current ? getWeatherMeta(weatherData.current.weather_code) : { label: "Unknown", icon: <Cloud className="w-8 h-8" />, bg: "from-slate-500/10 to-slate-50/10" };
+
+  if (!at) return <NeedsLocation what="Field Forecast" />;
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6" id="field-weather-dashboard">
@@ -110,10 +114,10 @@ export default function FieldWeatherPage({ parcels, activeParcelId, onSelectParc
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Select Field:</span>
           <select
             value={activeParcel?.id || ""}
-            onChange={(e) => onSelectParcel(e.target.value)}
+            onChange={(e) => onSelectParcel?.(e.target.value)}
             className="bg-white border border-slate-200 text-slate-800 text-xs font-bold rounded-2xl px-4 py-2.5 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs cursor-pointer outline-none"
           >
-            {parcels.map((p) => (
+            {parcels?.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name} ({p.cropType})
               </option>

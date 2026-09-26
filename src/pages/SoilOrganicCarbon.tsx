@@ -1,7 +1,8 @@
 import { EarthIslandVisualizer } from "../components/EarthIslandVisualizer";
+import { useNavigate } from "react-router-dom";
+import { ToolProps } from "../tools/registry";
 import React, { useEffect, useMemo, useState } from "react";
 import { Layers, Activity, MapPin, Loader2, Info, Leaf, CloudRain, ArrowLeft } from "lucide-react";
-import { Parcel } from "../types";
 
 interface SoilCarbonData {
   soc: Record<string, number | null>;
@@ -9,12 +10,6 @@ interface SoilCarbonData {
   ocd: Record<string, number | null>;
 }
 
-interface SoilOrganicCarbonProps {
-  parcels: Parcel[];
-  activeParcelId: string | null;
-  onSelectParcel: (id: string) => void;
-  onNavigate: (page: string) => void;
-}
 
 const getSocBlockColor = (soc: number) => {
   if (soc > 40) return "bg-[#1c1917] border-t-[#292524] border-l-[#292524] border-b-[#0c0a09] border-r-[#0c0a09]";
@@ -25,11 +20,17 @@ const getSocBlockColor = (soc: number) => {
   return "bg-[#a8a29e] border-t-[#d6d3d1] border-l-[#d6d3d1] border-b-[#78716c] border-r-[#78716c]";
 };
 
-export default function SoilOrganicCarbon({ parcels, activeParcelId, onSelectParcel, onNavigate }: SoilOrganicCarbonProps) {
+export default function SoilOrganicCarbon({ parcels, activeParcelId, onSelectParcel, location }: ToolProps) {
+  const navigate = useNavigate();
   const activeParcel = parcels?.find(p => p.id === activeParcelId) || parcels?.[0];
+  // A saved field's coordinates when one is selected, otherwise the shared
+  // location, so the tool works with or without an account.
   const coords = useMemo(
-    () => activeParcel ? { lat: activeParcel.lat || activeParcel.latitude, lng: activeParcel.lng || activeParcel.longitude } : null,
-    [activeParcel]
+    () =>
+      activeParcel
+        ? { lat: activeParcel.lat || activeParcel.latitude, lng: activeParcel.lng || activeParcel.longitude }
+        : location,
+    [activeParcel, location]
   );
 
   const [data, setData] = useState<SoilCarbonData | null>(null);
@@ -51,11 +52,17 @@ export default function SoilOrganicCarbon({ parcels, activeParcelId, onSelectPar
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
 
-        const url = `https://rest.isric.org/soilgrids/v2.0/properties/query?lon=${fetchLng}&lat=${fetchLat}&property=soc&property=nitrogen&property=ocd&depth=0-5cm&depth=5-15cm&depth=15-30cm&depth=30-60cm&depth=60-100cm&depth=100-200cm&value=mean`;
+        const url = "/api/soilgrids-properties";
+        // Through the server so it carries provenance like every other call.
+        const soilRequest = {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lat: fetchLat, lng: fetchLng }),
+        };
 
         let response;
         try {
-          response = await fetch(url, { signal: controller.signal });
+          response = await fetch(url, { ...soilRequest, signal: controller.signal });
           clearTimeout(timeoutId);
         } catch (fetchErr: any) {
           clearTimeout(timeoutId);
@@ -128,7 +135,7 @@ export default function SoilOrganicCarbon({ parcels, activeParcelId, onSelectPar
       <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => onNavigate("field-overview")}
+            onClick={() => navigate("/tools")}
             className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
@@ -146,15 +153,15 @@ export default function SoilOrganicCarbon({ parcels, activeParcelId, onSelectPar
       </div>
 
       {/* Parcel / Field selector bar */}
-      {parcels.length > 0 && (
+      {(parcels?.length ?? 0) > 0 && (
         <div className="flex flex-wrap gap-2 items-center bg-white dark:bg-slate-900 p-2 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-2 pr-1 flex items-center gap-1">
             <MapPin className="w-3.5 h-3.5 text-slate-400" /> Field:
           </span>
-          {parcels.map((p) => (
+          {parcels?.map((p) => (
             <button
               key={p.id}
-              onClick={() => onSelectParcel(p.id)}
+              onClick={() => onSelectParcel?.(p.id)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 p.id === activeParcelId
                   ? "bg-emerald-500 text-white shadow-sm"

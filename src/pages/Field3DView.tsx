@@ -19,110 +19,17 @@ import {
   X,
   Globe
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Parcel } from "../types";
 
-// Standard pre-configured fields for high-fidelity 3D exploration
-const DEFAULT_3D_PARCELS: Parcel[] = [
-  {
-    id: "p1",
-    name: "North Barley Ring",
-    cropType: "Barley",
-    area: 45.8,
-    farmSize: 45.8,
-    soilMoisture: 42,
-    predictedYield: 6.8,
-    lat: 41.8902,
-    lng: -87.6298,
-    latitude: 41.8902,
-    longitude: -87.6298,
-    location: "41.89° N, 87.63° W",
-    boundaries: [],
-    ndvi: 0.82,
-    ndviValue: 0.82,
-    ndwiValue: 0.42,
-    cropHeight: 85,
-    soilType: "Clay Loam",
-    soilPH: 6.4,
-    nitrogen: "Optimal",
-    plantingMonth: "May",
-    costPerHectare: 900,
-    marketPricePerTon: 220,
-    createdAt: "2026-05-12",
-    lastUpdated: "2026-05-12",
-    userId: "mock-agronomist-george",
-    ownerId: "mock-agronomist-george",
-    customImage: null,
-  },
-  {
-    id: "p2",
-    name: "Valley Soy Plot",
-    cropType: "Soybeans",
-    area: 28.4,
-    farmSize: 28.4,
-    soilMoisture: 58,
-    predictedYield: 4.2,
-    lat: 41.8950,
-    lng: -87.6320,
-    latitude: 41.8950,
-    longitude: -87.6320,
-    location: "41.90° N, 87.63° W",
-    boundaries: [],
-    ndvi: 0.74,
-    ndviValue: 0.74,
-    ndwiValue: 0.52,
-    cropHeight: 65,
-    soilType: "Silt Loam",
-    soilPH: 6.2,
-    nitrogen: "Optimal",
-    plantingMonth: "May",
-    costPerHectare: 950,
-    marketPricePerTon: 340,
-    createdAt: "2026-05-14",
-    lastUpdated: "2026-05-14",
-    userId: "mock-agronomist-george",
-    ownerId: "mock-agronomist-george",
-    customImage: null,
-  },
-  {
-    id: "p3",
-    name: "Hillside Wheat Quadrant",
-    cropType: "Winter Wheat",
-    area: 64.2,
-    farmSize: 64.2,
-    soilMoisture: 24,
-    predictedYield: 5.5,
-    lat: 41.8880,
-    lng: -87.6250,
-    latitude: 41.8880,
-    longitude: -87.6250,
-    location: "41.89° N, 87.63° W",
-    boundaries: [],
-    ndvi: 0.45,
-    ndviValue: 0.45,
-    ndwiValue: 0.31,
-    cropHeight: 92,
-    soilType: "Sandy Loam",
-    soilPH: 6.8,
-    nitrogen: "Minimal",
-    plantingMonth: "May",
-    costPerHectare: 880,
-    marketPricePerTon: 190,
-    createdAt: "2026-05-15",
-    lastUpdated: "2026-05-15",
-    userId: "mock-agronomist-george",
-    ownerId: "mock-agronomist-george",
-    customImage: null,
-  }
-];
 
 interface Field3DViewProps {
   parcels?: Parcel[];
   initialSelectedParcelId?: string;
 }
 
-export default function Field3DView({ parcels = [], initialSelectedParcelId }: Field3DViewProps) {
-  // Merge user parcels with defaults so there's always gorgeous 3D fields to display
-  const allParcels = parcels.length > 0 ? parcels : DEFAULT_3D_PARCELS;
+function Field3DViewInner({ parcels, initialSelectedParcelId }: Required<Pick<Field3DViewProps, "parcels">> & Pick<Field3DViewProps, "initialSelectedParcelId">) {
+  const allParcels = parcels;
   const [selectedParcel, setSelectedParcel] = useState<Parcel>(() => {
     if (initialSelectedParcelId) {
       const found = allParcels.find(x => x.id === initialSelectedParcelId);
@@ -203,7 +110,7 @@ export default function Field3DView({ parcels = [], initialSelectedParcelId }: F
   const socialTemplates = [
     {
       title: "🔬 Sensor Science",
-      text: `🔬 Fully captured agricultural metrics for "${customTitle || selectedParcel.name}"! NDVI ${selectedParcel.ndvi !== null ? selectedParcel.ndvi.toFixed(2) : "not recorded"}, yield estimate ${selectedParcel.predictedYield !== null ? `${selectedParcel.predictedYield !== null ? `${selectedParcel.predictedYield.toFixed(1)} t/ha` : "—"}a` : "not recorded"}.`
+      text: `🔬 Fully captured agricultural metrics for "${customTitle || selectedParcel.name}"! NDVI ${selectedParcel.ndvi !== null ? selectedParcel.ndvi.toFixed(2) : "not recorded"}, yield estimate ${selectedParcel.predictedYield !== null ? `${selectedParcel.predictedYield.toFixed(1)} t/ha` : "not recorded"}.`
     },
     {
       title: "🛰️ Satellite Analysis",
@@ -1843,5 +1750,25 @@ export default function Field3DView({ parcels = [], initialSelectedParcelId }: F
       )}
     </div>
   );
+}
+
+// The 3D view renders the user's own field boundaries. With no fields saved there is
+// nothing to render, so it says so rather than displaying someone else's.
+export default function Field3DView({ parcels = [], initialSelectedParcelId }: Field3DViewProps) {
+  if (parcels.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 py-24 px-6 text-center">
+        <Globe className="w-10 h-10 text-slate-300 dark:text-slate-600" />
+        <h3 className="text-sm font-display font-black text-slate-900 dark:text-slate-100">No fields to render</h3>
+        <p className="max-w-sm text-xs text-slate-500 dark:text-slate-400">
+          The 3D view is built from the GPS boundaries of your own fields. Draw a field first and it will appear here.
+        </p>
+        <Link to="/parcel-form" className="mt-2 rounded-lg bg-brand-green px-4 py-2 text-xs font-bold text-white">
+          Draw a field
+        </Link>
+      </div>
+    );
+  }
+  return <Field3DViewInner parcels={parcels} initialSelectedParcelId={initialSelectedParcelId} />;
 }
 

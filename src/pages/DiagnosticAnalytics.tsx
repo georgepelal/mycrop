@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSettings } from "../contexts/useSettings";
@@ -34,7 +35,6 @@ interface DiagnosticAnalyticsProps {
   parcels: Parcel[];
   activeParcelId: string;
   onSelectParcel: (id: string) => void;
-  onNavigate: (page: string) => void;
 }
 
 // Mathematical Sunrise/Sunset & Photoperiod calculation based on astronomical coordinate geometry
@@ -92,9 +92,8 @@ function calculateDaylightHours(latitude: number, longitude: number | undefined)
 export default function DiagnosticAnalytics({ 
   parcels, 
   activeParcelId, 
-  onSelectParcel, 
-  onNavigate 
-}: DiagnosticAnalyticsProps) {
+  onSelectParcel, }: DiagnosticAnalyticsProps) {
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const { tempUnit, rainUnit, convertRain } = useSettings();
 
@@ -314,8 +313,17 @@ export default function DiagnosticAnalytics({
 
     const fetchSoilParameters = async () => {
       try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=soil_temperature_0_to_7cm,soil_temperature_7_to_28cm,soil_temperature_28_to_100cm,soil_moisture_0_to_7cm,soil_moisture_7_to_28cm,soil_moisture_28_to_100cm&timezone=auto`;
-        const res = await fetch(url);
+        const url = "/api/open-meteo-forecast";
+        const meteoRequest = {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lat: lat,
+            lng: lng,
+            query: "hourly=soil_temperature_0_to_7cm,soil_temperature_7_to_28cm,soil_temperature_28_to_100cm,soil_moisture_0_to_7cm,soil_moisture_7_to_28cm,soil_moisture_28_to_100cm&timezone=auto",
+          }),
+        };
+        const res = await fetch(url, meteoRequest);
         if (!res.ok) {
           throw new Error("Open-Meteo Soil Profile endpoint returned an error.");
         }
@@ -416,9 +424,20 @@ export default function DiagnosticAnalytics({
           "GWETTOP"
         ].join(",");
 
-        const url = `https://power.larc.nasa.gov/api/temporal/daily/point?parameters=${paramsQuery}&community=ag&longitude=${lng}&latitude=${lat}&start=${startStr}&end=${endStr}&format=json`;
+        const url = "/api/nasa-power-daily";
+        const powerRequest = {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lat: lat,
+            lng: lng,
+            start: startStr,
+            end: endStr,
+            parameters: paramsQuery.toUpperCase(),
+          }),
+        };
 
-        const res = await fetch(url);
+        const res = await fetch(url, powerRequest);
         if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.error || "Climatology satellite feed failure.");
@@ -1336,7 +1355,7 @@ export default function DiagnosticAnalytics({
                       <button 
                         onClick={() => {
                           onSelectParcel(p.id);
-                          onNavigate("field-overview");
+                          navigate("/field-overview");
                         }}
                         className="text-[10px] font-bold text-red-600 hover:underline uppercase tracking-wider font-mono shrink-0 select-none cursor-pointer"
                       >
@@ -1456,7 +1475,7 @@ export default function DiagnosticAnalytics({
             </div>
 
             <button
-              onClick={() => onNavigate("field-weather")}
+              onClick={() => navigate("/tools/field-forecast")}
               className="w-full text-center text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 border border-blue-150 rounded-xl py-2 mt-1 cursor-pointer"
             >
               {t("dashboard.inspectCalendar", "Inspect 10-Day Irrigation Calendar")}

@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect, useRef } from "react";
 import { Coordinate, CROP_PRESETS as CROP_PRESETS_MAP, Crop } from "../types";
 import { getCropsCatalog } from "../lib/db";
@@ -6,7 +7,6 @@ import LocationSearch from "../components/LocationSearch";
 
 interface ParcelFormProps {
   onAddParcel: (parcel: any) => void;
-  onNavigateBack: () => void;
 }
 
 const CROP_PRESETS = Object.keys(CROP_PRESETS_MAP);
@@ -41,7 +41,8 @@ function calculatePolygonAreaHa(vertices: { lat: number; lng: number }[]): numbe
   return Math.max(0.1, parseFloat(areaHa.toFixed(1)));
 }
 
-export default function ParcelForm({ onAddParcel, onNavigateBack }: ParcelFormProps) {
+export default function ParcelForm({ onAddParcel }: ParcelFormProps) {
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [cropType, setCropType] = useState(CROP_PRESETS[0]);
   const [soilType] = useState(SOIL_PRESETS[0]);
@@ -271,7 +272,7 @@ export default function ParcelForm({ onAddParcel, onNavigateBack }: ParcelFormPr
       {/* Header */}
       <div className="flex items-center gap-4 border-b border-gray-150 pb-5">
         <button
-          onClick={onNavigateBack}
+          onClick={() => navigate("/parcels")}
           className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />

@@ -1,4 +1,6 @@
 import { EarthIslandVisualizer } from "../components/EarthIslandVisualizer";
+import { useNavigate } from "react-router-dom";
+import { ToolProps } from "../tools/registry";
 import React, { useState, useEffect } from "react";
 import { useSettings } from "../contexts/useSettings";
 
@@ -15,7 +17,6 @@ import {
   Sparkles,
   Activity
 } from "lucide-react";
-import { Parcel } from "../types";
 import { 
   ResponsiveContainer, 
   AreaChart, 
@@ -28,12 +29,6 @@ import {
   ReferenceLine
 } from "recharts";
 
-interface DeepSoilTemperatureProps {
-  parcels?: Parcel[];
-  activeParcelId?: string | null;
-  onSelectParcel?: (id: string) => void;
-  onNavigate: (page: string) => void;
-}
 
 interface CropThreshold {
   name: string;
@@ -53,12 +48,8 @@ const CROP_THRESHOLDS: CropThreshold[] = [
   { name: "Tomatoes", minGermination: 12, optMin: 18, optMax: 28 },
 ];
 
-export default function DeepSoilTemperature({ 
-  parcels = [], 
-  activeParcelId, 
-  onSelectParcel, 
-  onNavigate 
-}: DeepSoilTemperatureProps) {
+export default function DeepSoilTemperature({ parcels, activeParcelId, onSelectParcel, location }: ToolProps) {
+  const navigate = useNavigate();
   const { tempUnit, convertTemp } = useSettings();
 
   const [loading, setLoading] = useState(false);
@@ -92,7 +83,7 @@ export default function DeepSoilTemperature({
     bedrock: true,
   });
 
-  const activeParcel = parcels.find(p => p.id === activeParcelId) || parcels[0];
+  const activeParcel = parcels?.find(p => p.id === activeParcelId) || parcels?.[0];
 
   // Set default coordinates on mount or when active parcel changes
   useEffect(() => {
@@ -112,12 +103,14 @@ export default function DeepSoilTemperature({
           }
         }
       }
+    } else if (location) {
+      setCoords({ lat: location.lat, lng: location.lng });
+      setLocationName(location.label);
     } else {
-      // Standard fallback (e.g., London or mid-western farm coordinates)
-      setCoords({ lat: 41.8781, lng: -87.6298 }); // Chicago / Midwest US Corn Belt
-      setLocationName("Midwest Farm Belt, US");
+      setCoords(null);
+      setLocationName("");
     }
-  }, [activeParcel]);
+  }, [activeParcel, location]);
 
   // Fetch Soil Temperature & Moisture hourly forecast from Open-Meteo
   useEffect(() => {
@@ -139,8 +132,17 @@ export default function DeepSoilTemperature({
 
     const fetchSoilParameters = async () => {
       try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${fetchLat}&longitude=${fetchLng}&hourly=soil_temperature_0_to_7cm,soil_temperature_7_to_28cm,soil_temperature_28_to_100cm,soil_temperature_100_to_255cm,soil_moisture_0_to_7cm,soil_moisture_7_to_28cm,soil_moisture_28_to_100cm,soil_moisture_100_to_255cm`;
-        const res = await fetch(url);
+        const url = "/api/open-meteo-forecast";
+        const meteoRequest = {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lat: fetchLat,
+            lng: fetchLng,
+            query: "hourly=soil_temperature_0_to_7cm,soil_temperature_7_to_28cm,soil_temperature_28_to_100cm,soil_temperature_100_to_255cm,soil_moisture_0_to_7cm,soil_moisture_7_to_28cm,soil_moisture_28_to_100cm,soil_moisture_100_to_255cm",
+          }),
+        };
+        const res = await fetch(url, meteoRequest);
         
         if (!res.ok) {
           throw new Error("Failed to fetch sub-surface data from Open-Meteo.");
@@ -322,7 +324,7 @@ export default function DeepSoilTemperature({
       <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => onNavigate("field-overview")}
+            onClick={() => navigate("/tools")}
             className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
@@ -341,15 +343,15 @@ export default function DeepSoilTemperature({
       </div>
 
       {/* Parcel / Field selector bar */}
-      {parcels.length > 0 && (
+      {(parcels?.length ?? 0) > 0 && (
         <div className="flex flex-wrap gap-2 items-center bg-white dark:bg-slate-900 p-2 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-2 pr-1 flex items-center gap-1">
             <MapPin className="w-3.5 h-3.5 text-slate-400" /> Field:
           </span>
-          {parcels.map((p) => (
+          {parcels?.map((p) => (
             <button
               key={p.id}
-              onClick={() => onSelectParcel && onSelectParcel(p.id)}
+              onClick={() => onSelectParcel && onSelectParcel?.(p.id)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 p.id === activeParcelId
                   ? "bg-emerald-500 text-white shadow-sm"

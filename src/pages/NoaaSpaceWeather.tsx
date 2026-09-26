@@ -2,11 +2,11 @@ import React, { useState, useEffect } from "react";
 import { ArrowLeft, Loader2, Compass, SunDim, Radio, ShieldAlert, Cpu, AlertTriangle, RefreshCw } from "lucide-react";
 
 interface SpaceWeatherScale {
-  radiationStorms: number;
-  radioBlackouts: number;
-  geomagneticStorms: number;
-  gpsIntegrityClass: string;
-  scintillationRisk: string;
+  radiationStorms: number | null;
+  radioBlackouts: number | null;
+  geomagneticStorms: number | null;
+  // NOAA's own wording for G3+; null when NOAA lists no navigation effect.
+  gnssEffect: string | null;
 }
 
 interface SpaceWeatherData {
@@ -45,13 +45,15 @@ export default function NoaaSpaceWeather({ onNavigate }: NoaaSpaceWeatherProps) 
     fetchSpaceWeather();
   }, []);
 
-  const getRiskColor = (scale: number) => {
+  const getRiskColor = (scale: number | null) => {
+    if (scale === null) return "text-slate-400 bg-slate-50 border-slate-200";
     if (scale === 0) return "text-emerald-500 bg-emerald-50 border-emerald-200";
     if (scale <= 2) return "text-amber-500 bg-amber-50 border-amber-200";
     return "text-rose-500 bg-rose-50 border-rose-200";
   };
 
-  const getStatusLabel = (scale: number) => {
+  const getStatusLabel = (scale: number | null) => {
+    if (scale === null) return "Not reported";
     if (scale === 0) return "None (Normal)";
     return `G/S/R Class ${scale} Alert`;
   };
@@ -107,31 +109,17 @@ export default function NoaaSpaceWeather({ onNavigate }: NoaaSpaceWeatherProps) 
 
           {/* Core Warning Banner */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-slate-900 border border-slate-950 rounded-2xl p-6 shadow-xl relative overflow-hidden text-white flex flex-col justify-center min-h-[220px]">
+            <div className="md:col-span-2 bg-slate-900 border border-slate-950 rounded-2xl p-6 shadow-xl relative overflow-hidden text-white flex flex-col justify-center min-h-[180px]">
               <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
               <div className="flex items-center gap-2 text-slate-400 font-bold uppercase tracking-widest text-xs mb-3">
-                <Compass className="w-4 h-4 text-amber-400" /> Satellite Navigation Risk
+                <Compass className="w-4 h-4 text-amber-400" /> Satellite Navigation (GNSS / RTK)
               </div>
-              <div className="text-medium text-slate-300 mb-1">GPS Telemetry Status:</div>
-              <div className="text-4xl font-black tracking-tight text-white flex items-baseline gap-2">
-                {data.scales.gpsIntegrityClass}
+              <div className="text-2xl font-black tracking-tight text-white">
+                {data.scales.gnssEffect ?? "NOAA lists no satellite-navigation effect at the current storm level."}
               </div>
-              <p className="text-xs text-slate-400 mt-3 font-mono leading-relaxed max-w-md">
-                Critical for auto-steer tractor rigs and autonomous spraying UAV flights. Ionospheric anomalies delay carrier phase locks.
+              <p className="text-xs text-slate-400 mt-3 leading-relaxed max-w-xl">
+                From NOAA&apos;s geomagnetic storm scale (G3 and above). Relevant to auto-steer and RTK guidance.
               </p>
-            </div>
-
-            <div className="bg-white border rounded-2xl p-6 shadow-sm flex flex-col justify-center min-h-[220px]">
-              <div className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-3 flex items-center gap-2">
-                <Radio className="w-4 h-4 text-emerald-500" /> Ionospheric Scintillation
-              </div>
-              <div className="text-slate-500 text-sm mb-1 font-semibold">Wave Interruption Risk:</div>
-              <div className="text-5xl font-black text-emerald-600 leading-tight">
-                {data.scales.scintillationRisk}
-              </div>
-              <div className="text-slate-400 font-mono text-[10px] mt-3">
-                Updated in real-time. Calculated based on NOAA swpc index arrays.
-              </div>
             </div>
           </div>
 

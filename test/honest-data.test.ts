@@ -184,3 +184,15 @@ describe('POST /api/predict', () => {
     expect(res.body.error).toMatch(/ndviValue/);
   });
 });
+
+describe('GET /api/noaa-space-weather-activity', () => {
+  it('keeps a missing scale as null and only uses NOAA wording from G3', async () => {
+    const scales = { '0': { DateStamp: '2026-09-26', TimeStamp: '18:56:00', R: { Scale: null }, S: { Scale: '0' }, G: { Scale: '3' } } };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(scales)));
+    const res = await request(app).get('/api/noaa-space-weather-activity');
+    expect(res.status).toBe(200);
+    expect(res.body.scales.radioBlackouts).toBeNull();
+    expect(res.body.scales.geomagneticStorms).toBe(3);
+    expect(res.body.scales.gnssEffect).toMatch(/satellite navigation/);
+  });
+});

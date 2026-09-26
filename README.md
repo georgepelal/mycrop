@@ -22,6 +22,7 @@ Pick a location, and each tool fetches and visualizes live data for it. Optional
 2. Copy `.env.example` to `.env.local` and fill in what you have. Every key is optional for local development:
    - `GEMINI_API_KEY` — enables the AI chat and AI-written summaries. Without it, chat and the yield estimate return short, clearly labelled rule-of-thumb text.
    - `CDSE_CLIENT_ID` / `CDSE_CLIENT_SECRET` — a free Copernicus Data Space OAuth client ([register here](https://shapps.dataspace.copernicus.eu/dashboard/#/account/settings)). Enables the Sentinel-2 reflectance tool; without it that tool returns 503.
+   - `NASS_API_KEY` — a free USDA NASS Quick Stats key. Enables the US crop price tool; without it that tool returns 503.
    - `GOOGLE_MAPS_PLATFORM_KEY` — enables the interactive map pickers.
    - Firebase config lives in `firebase-applet-config.json` (safe to keep as-is; it's a public web API key, not a secret).
 3. Start the dev server:

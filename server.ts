@@ -3221,33 +3221,87 @@ app.post("/api/plant-dictionary-lookup", async (req, res) => {
 });
 
 // API Endpoint: USDA Quick Stats and World Bank crop economic market price trackers
+// USDA NASS Quick Stats: national monthly "price received by farmers".
+// This used to return a hard-coded table (corn $4.32, "Slightly Bearish",
+// "CBOT") labelled as NASS data. It now calls NASS, which needs a free key
+// (https://quickstats.nass.usda.gov/api); without one it answers 503.
+const NASS_COMMODITIES: Record<string, { commodity: string; prefix: string }> = {
+  corn: { commodity: "CORN", prefix: "CORN, GRAIN" },
+  soybeans: { commodity: "SOYBEANS", prefix: "SOYBEANS" },
+  wheat: { commodity: "WHEAT", prefix: "WHEAT" },
+  barley: { commodity: "BARLEY", prefix: "BARLEY" },
+  sorghum: { commodity: "SORGHUM", prefix: "SORGHUM, GRAIN" },
+  cotton: { commodity: "COTTON", prefix: "COTTON, UPLAND" },
+  rice: { commodity: "RICE", prefix: "RICE" },
+  potato: { commodity: "POTATOES", prefix: "POTATOES" },
+  potatoes: { commodity: "POTATOES", prefix: "POTATOES" },
+};
+const NASS_MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
 app.post("/api/usda-crop-pricing", async (req, res) => {
   try {
-    const { cropName = "Corn" } = req.body;
-
-    const baseContracts: Record<string, any> = {
-      corn: { pricePerBushelUsd: 4.32, activeExchange: "CBOT (Chicago)", tradingVolume: "High", yieldPerAcreUsBushel: 177.3, priceTrend: "Slightly Bearish" },
-      soybeans: { pricePerBushelUsd: 11.45, activeExchange: "CBOT (Chicago)", tradingVolume: "Extremely High", yieldPerAcreUsBushel: 50.6, priceTrend: "Steady consolidation" },
-      wheat: { pricePerBushelUsd: 5.86, activeExchange: "KCBT/CBOT", tradingVolume: "High", yieldPerAcreUsBushel: 48.6, priceTrend: "Bullish (dryness fears)" },
-      barley: { pricePerBushelUsd: 4.10, activeExchange: "MGEX (Minneapolis)", tradingVolume: "Moderate", yieldPerAcreUsBushel: 72.4, priceTrend: "Stable" },
-      potato: { pricePerBushelUsd: 10.80, activeExchange: "Spot Markets (Hundredweight)", tradingVolume: "Steady", yieldPerAcreUsBushel: 440.0, priceTrend: "Bullish (high logistics cost)" },
-      tomato: { pricePerBushelUsd: 14.50, activeExchange: "Wholesale Markets (25lb box)", tradingVolume: "Vigorous", yieldPerAcreUsBushel: 840.0, priceTrend: "Seasonal premium" }
-    };
-
-    const normKey = cropName.toLowerCase().replace(/[^a-z]/g, "");
-    const stats = baseContracts[normKey];
-    if (!stats) {
-      return res.status(404).json({ error: `Market data not available for ${cropName}. Please try Corn, Soybeans, Wheat, Barley, Potato, or Tomato.` });
+    const { cropName } = req.body;
+    if (typeof cropName !== "string" || !cropName.trim()) {
+      return res.status(400).json({ error: "cropName is required" });
+    }
+    const spec = NASS_COMMODITIES[cropName.toLowerCase().replace(/[^a-z]/g, "")];
+    if (!spec) {
+      return res.status(404).json({ error: `USDA NASS has no monthly national price for ${cropName}. Try ${Object.keys(NASS_COMMODITIES).join(", ")}.` });
+    }
+    const key = process.env.NASS_API_KEY;
+    if (!key) {
+      return res.status(503).json({ error: "USDA NASS isn't configured on this server (NASS_API_KEY)." });
     }
 
+    const params = new URLSearchParams({
+      key,
+      source_desc: "SURVEY",
+      commodity_desc: spec.commodity,
+      statisticcat_desc: "PRICE RECEIVED",
+      agg_level_desc: "NATIONAL",
+      freq_desc: "MONTHLY",
+      year__GE: String(new Date().getFullYear() - 1),
+      format: "JSON",
+    });
+    const r = await fetch(`https://quickstats.nass.usda.gov/api/api_GET/?${params}`);
+    let rows: any[] = [];
+    if (r.ok) {
+      rows = (await r.json())?.data ?? [];
+    } else if (r.status !== 400) {
+      return res.status(502).json({ error: `USDA NASS returned ${r.status}` });
+    }
+
+    let best: { rank: number; price: number; unit: string; row: any } | null = null;
+    for (const row of rows) {
+      const short = String(row.short_desc ?? "");
+      if (!short.startsWith(spec.prefix) || !short.includes(" - PRICE RECEIVED")) continue;
+      if (row.domain_desc && row.domain_desc !== "TOTAL") continue;
+      const unit = short.match(/MEASURED IN \$ \/ (\w+)/)?.[1];
+      const month = NASS_MONTHS.indexOf(String(row.reference_period_desc ?? "").toUpperCase());
+      const price = Number(String(row.Value ?? "").replace(/,/g, ""));
+      // "(D)" / "(NA)" are withheld values, not zero.
+      if (!unit || month < 0 || !Number.isFinite(price) || String(row.Value).trim().startsWith("(")) continue;
+      const rank = Number(row.year) * 12 + month;
+      if (!best || rank > best.rank) best = { rank, price, unit, row };
+    }
+    if (!best) {
+      return res.status(404).json({ error: `USDA NASS has no recent monthly price for ${cropName}.` });
+    }
+
+    const year = Math.floor(best.rank / 12);
+    const month = (best.rank % 12) + 1;
     res.json({
       cropName,
-      marketStats: stats,
-      apiCitation: "Agricultural commodity prices and regional yields compiled from USDA NASS Quick Stats and the World Bank Pink Sheet Reports."
+      commodity: spec.commodity,
+      series: best.row.short_desc,
+      period: `${year}-${String(month).padStart(2, "0")}`,
+      priceUsd: best.price,
+      unit: best.unit.toLowerCase(),
+      apiCitation: "US national average price received by farmers, USDA NASS Quick Stats (monthly survey). A reference, not a local bid.",
     });
   } catch (error: any) {
-    console.error("USDA crop pricing catalog lookup failed:", error);
-    res.status(500).json({ error: "Failed to fetch commodity price and USDA yield indices" });
+    console.error("USDA NASS price lookup failed:", error);
+    res.status(502).json({ error: "Couldn't reach USDA NASS" });
   }
 });
 
@@ -4005,57 +4059,40 @@ Make sure the output is strictly a flat JSON array of these 45 objects. Do NOT u
 });
 
 // API Endpoint: NOAA Space Weather & Ionosphere Scales (Real-time S, R, G indices for GPS signal integrity)
+// Satellite-navigation effects per geomagnetic storm level, paraphrased from
+// NOAA's scale descriptions (https://www.swpc.noaa.gov/noaa-scales-explanation).
+// NOAA lists none for G1-G2. The old version invented its own "GPS integrity"
+// classes from the max of R/S/G and defaulted missing scales to 0.
+const NOAA_G_GNSS: Record<number, string> = {
+  3: "Intermittent satellite navigation and low-frequency radio navigation problems may occur.",
+  4: "Satellite navigation degraded for hours; low-frequency radio navigation disrupted.",
+  5: "Satellite navigation may be degraded for days; low-frequency radio navigation out for hours.",
+};
+
 app.get("/api/noaa-space-weather-activity", async (req, res) => {
   try {
-    let lives = false;
-    const scales = {
-      radiationStorms: 0,
-      radioBlackouts: 0,
-      geomagneticStorms: 0,
-      gpsIntegrityClass: "EXCELLENT",
-      scintillationRisk: "LOW"
-    };
-
-    try {
-      const response = await fetch("https://services.swpc.noaa.gov/products/noaa-scales.json");
-      if (response.ok) {
-        const json = await response.json();
-        // Check current scale value (usually the key "0" contains current status)
-        if (json && json["0"]) {
-          lives = true;
-          const current = json["0"];
-          scales.radioBlackouts = current.R?.Scale ?? 0;
-          scales.radiationStorms = current.S?.Scale ?? 0;
-          scales.geomagneticStorms = current.G?.Scale ?? 0;
-
-          const maxScale = Math.max(scales.radioBlackouts, scales.radiationStorms, scales.geomagneticStorms);
-          if (maxScale >= 4) {
-            scales.gpsIntegrityClass = "CRITICAL / DISRUPTED";
-            scales.scintillationRisk = "EXTREME";
-          } else if (maxScale >= 2) {
-            scales.gpsIntegrityClass = "DEGRADED PRECISION";
-            scales.scintillationRisk = "MODERATE";
-          } else if (maxScale >= 1) {
-            scales.gpsIntegrityClass = "MINOR FLUCTUATION";
-            scales.scintillationRisk = "SLIGHT";
-          }
-        }
-      }
-    } catch (e) {
-      console.warn("NOAA SWPC Scales endpoint offline:", e);
+    const response = await fetch("https://services.swpc.noaa.gov/products/noaa-scales.json");
+    const json = response.ok ? await response.json() : null;
+    const current = json?.["0"];
+    if (!current) {
+      return res.status(502).json({ error: "Failed to load space weather scales from NOAA." });
     }
-
-    if (!lives) {
-      return res.status(502).json({ error: "Failed to load atmospheric space weather indexes from NOAA." });
-    }
-
+    // NOAA sends the scale as a string ("0".."5"); a missing one stays null.
+    const scale = (v: unknown) => (v === null || v === undefined || v === "" ? null : Number(v));
+    const geomagneticStorms = scale(current.G?.Scale);
     res.json({
-      isLiveSpaceWeather: lives,
-      scales,
-      apiCitation: "Ionosphere scintillation risk and geomagnetic storm status tracked live from the NOAA Space Weather Prediction Center (SWPC)."
+      isLiveSpaceWeather: true,
+      observedAt: current.DateStamp && current.TimeStamp ? `${current.DateStamp}T${current.TimeStamp}Z` : null,
+      scales: {
+        radioBlackouts: scale(current.R?.Scale),
+        radiationStorms: scale(current.S?.Scale),
+        geomagneticStorms,
+        gnssEffect: geomagneticStorms !== null ? NOAA_G_GNSS[geomagneticStorms] ?? null : null,
+      },
+      apiCitation: "Current R/S/G space weather scales from the NOAA Space Weather Prediction Center. Navigation effects are NOAA's scale descriptions.",
     });
   } catch {
-    res.status(500).json({ error: "Failed to load NOAA space weather indicators" });
+    res.status(502).json({ error: "Couldn't reach NOAA SWPC" });
   }
 });
 

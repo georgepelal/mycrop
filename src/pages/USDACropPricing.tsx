@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, Loader2, DollarSign, TrendingUp, Info, Activity, Factory } from "lucide-react";
+import { ArrowLeft, Loader2, DollarSign, TrendingUp, Info, Factory } from "lucide-react";
 
 interface USDAPricingProps {
   onNavigate: (page: string) => void;
@@ -7,13 +7,11 @@ interface USDAPricingProps {
 
 interface PricingData {
   cropName: string;
-  marketStats: {
-    pricePerBushelUsd: number;
-    activeExchange: string;
-    tradingVolume: string;
-    yieldPerAcreUsBushel: number;
-    priceTrend: string;
-  };
+  commodity: string;
+  series: string;
+  period: string;
+  priceUsd: number;
+  unit: string;
   apiCitation: string;
 }
 
@@ -136,53 +134,25 @@ export default function USDACropPricing({ onNavigate }: USDAPricingProps) {
                <h3 className="font-bold uppercase tracking-widest text-sm">{data.cropName} Market Profile</h3>
              </div>
 
-             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative z-10">
-               
-               <div className="flex items-start gap-4 p-5 bg-white/5 border border-white/10 rounded-xl relative shadow-inner">
-                  <div className="bg-emerald-500 text-emerald-950 p-3 rounded-lg shadow-sm">
-                    <DollarSign className="w-6 h-6" />
+             <div className="flex items-start gap-4 p-5 bg-white/5 border border-white/10 rounded-xl relative shadow-inner z-10">
+                <div className="bg-emerald-500 text-emerald-950 p-3 rounded-lg shadow-sm">
+                  <DollarSign className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="text-emerald-100/60 uppercase font-bold text-xs tracking-widest mb-1">Price received by farmers · {data.period}</h4>
+                  <div className="text-4xl font-black text-white flex items-baseline gap-1">
+                     {data.priceUsd.toFixed(2)}
+                     <span className="text-sm font-medium opacity-60">USD/{data.unit}</span>
                   </div>
-                  <div>
-                    <h4 className="text-emerald-100/60 uppercase font-bold text-xs tracking-widest mb-1">Contract Price</h4>
-                    <div className="text-4xl font-black text-white flex items-baseline gap-1">
-                       {data.marketStats.pricePerBushelUsd.toFixed(2)}
-                       <span className="text-sm font-medium opacity-60">USD/Bu</span>
-                    </div>
-                  </div>
-               </div>
-
-               <div className="flex flex-col justify-center space-y-4 p-5 bg-white/5 border border-white/10 rounded-xl shadow-inner">
-                  <div className="flex justify-between items-center border-b border-white/10 pb-2">
-                    <span className="text-emerald-100/60 font-semibold text-xs tracking-widest uppercase">Exchange</span>
-                    <span className="text-emerald-50 font-bold">{data.marketStats.activeExchange}</span>
-                  </div>
-                  <div className="flex justify-between items-center border-b border-white/10 pb-2">
-                    <span className="text-emerald-100/60 font-semibold text-xs tracking-widest uppercase">Trading Temp</span>
-                    <span className="text-emerald-50 font-bold">{data.marketStats.tradingVolume}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-emerald-100/60 font-semibold text-xs tracking-widest uppercase">Trend View</span>
-                    <span className="text-emerald-50 font-bold bg-white/10 px-2 py-0.5 rounded text-xs">{data.marketStats.priceTrend}</span>
-                  </div>
-               </div>
-
-             </div>
-
-             <div className="mt-6 p-4 bg-emerald-950/50 border border-emerald-900/50 rounded-xl flex items-center justify-between relative z-10">
-                 <div className="flex items-center gap-2 text-emerald-300">
-                    <Activity className="w-5 h-5 opacity-70" />
-                    <span className="font-bold uppercase tracking-wider text-xs">Projected Core Yield</span>
-                 </div>
-                 <div className="text-emerald-100 font-mono font-bold">
-                    {data.marketStats.yieldPerAcreUsBushel} Bushels / Acre
-                 </div>
+                  <div className="text-xs text-emerald-100/60 mt-2">{data.series}</div>
+                </div>
              </div>
           </div>
 
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex gap-4 text-slate-700">
             <Info className="w-6 h-6 shrink-0 mt-0.5 text-slate-500" />
             <div className="text-sm leading-relaxed">
-              <strong className="block mb-1">Standard Market Reporting</strong> 
+              <strong className="block mb-1">Source</strong> 
               {data.apiCitation}
             </div>
           </div>
